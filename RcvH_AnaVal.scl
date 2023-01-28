@@ -1,0 +1,766 @@
+{
+Scl_ResetOptions ;
+Scl_OverwriteBlocks:=           'y' ;
+Scl_GenerateReferenceData :=    'y' ;
+Scl_S7ServerActive:=            'n' ;
+Scl_CreateObjectCode:=          'y' ;
+Scl_OptimizeObjectCode:=        'y' ;
+Scl_MonitorArrayLimits:=        'n' ;
+Scl_CreateDebugInfo :=          'n' ;
+Scl_SetOKFlag:=                 'n' ;
+Scl_SetMaximumStringLength:=    '254'
+}
+ 
+//==========================================================================
+TYPE "AnaVal"
+ 
+  STRUCT    
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+END_TYPE
+//==========================================================================
+TYPE "DigVal"
+ 
+  STRUCT    
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+END_TYPE
+ 
+//==========================================================================
+FUNCTION_BLOCK FB11173 // "RcvH_AnaVal"
+TITLE ='Receive 32 AnaVal Structur with PBK BRCV H'
+AUTHOR : AdvLibIL
+FAMILY : Comm
+NAME : RcvH_Ana
+VERSION : '5.0'
+ 
+ 
+VAR_INPUT
+  _ID1 { S7_edit := 'para' }: WORD ;    //Physical Connection ID 1
+  R_ID1 { S7_edit := 'para' }: DWORD ;    //Telegramm Connection ID 1
+  _ID2 { S7_edit := 'para' }: WORD ;    //Physical Connection ID 2
+  R_ID2 { S7_edit := 'para' }: DWORD ;    //Telegramm Connection ID 2
+  RcvMonCyc { S7_visible := 'false' }: INT  := 3;    //nuber of Cycle for Receive Monitoring Error
+  SimOn { S7_edit := 'para' }: STRUCT     //1=Simulation active
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  SimPV0 { S7_edit := 'para' }: REAL ;    //Simulation value
+  SimPV1 { S7_edit := 'para' }: REAL ;    //Simulation value
+  SimPV2 { S7_edit := 'para' }: REAL ;    //Simulation value
+  SimPV3 { S7_edit := 'para' }: REAL ;    //Simulation value
+  SimPV4 { S7_edit := 'para' }: REAL ;    //Simulation value
+  SimPV5 { S7_edit := 'para' }: REAL ;    //Simulation value
+  SimPV6 { S7_edit := 'para' }: REAL ;    //Simulation value
+  SimPV7 { S7_edit := 'para' }: REAL ;    //Simulation value
+  SimPV8 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SimPV9 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SimPV10 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SimPV11 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SimPV12 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SimPV13 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SimPV14 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SimPV15 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SimPV16 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SimPV17 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SimPV18 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SimPV19 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SimPV20 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SimPV21 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SimPV22 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SimPV23 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SimPV24 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SimPV25 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SimPV26 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SimPV27 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SimPV28 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SimPV29 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SimPV30 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SimPV31 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Simulation value
+  SubsPV0 { S7_edit := 'para' }: REAL ;    //Substitut value
+  SubsPV1 { S7_edit := 'para' }: REAL ;    //Substitut value
+  SubsPV2 { S7_edit := 'para' }: REAL ;    //Substitut value
+  SubsPV3 { S7_edit := 'para' }: REAL ;    //Substitut value
+  SubsPV4 { S7_edit := 'para' }: REAL ;    //Substitut value
+  SubsPV5 { S7_edit := 'para' }: REAL ;    //Substitut value
+  SubsPV6 { S7_edit := 'para' }: REAL ;    //Substitut value
+  SubsPV7 { S7_edit := 'para' }: REAL ;    //Substitut value
+  SubsPV8 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  SubsPV9 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  SubsPV10 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  SubsPV11 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  SubsPV12 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  SubsPV13 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  SubsPV14 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  SubsPV15 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  SubsPV16 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  SubsPV17 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  SubsPV18 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  SubsPV19 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  SubsPV20 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  SubsPV21 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  SubsPV22 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  SubsPV23 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  SubsPV24 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  SubsPV25 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  SubsPV26 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  SubsPV27 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  SubsPV28 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  SubsPV29 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  SubsPV30 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  SubsPV31 { S7_edit := 'para'; S7_visible := 'false' }: REAL ;    //Substitut value
+  Feature { S7_visible := 'false' }: STRUCT     //Status of various features
+   Bit0 : BOOL ;    //Reserved
+   Bit1 : BOOL ;    //Reserved
+   Bit2 : BOOL ;    //Reserved
+   Bit3 : BOOL ;    //Reserved
+   Bit4 : BOOL ;    //Reserved
+   Bit5 : BOOL ;    //Reserved
+   Bit6 : BOOL ;    //Reserved
+   Bit7 : BOOL ;    //Reserved
+   Bit8 : BOOL ;    //Reserved
+   Bit9 : BOOL ;    //Reserved
+   Bit10 : BOOL ;    //Reserved
+   Bit11 : BOOL ;    //Reserved
+   Bit12 : BOOL ;    //Reserved
+   Bit13 : BOOL ;    //Reserved
+   Bit14 : BOOL ;    //Reserved
+   Bit15 : BOOL ;    //Reserved
+   Bit16 : BOOL ;    //Reserved
+   Bit17 : BOOL ;    //Reserved
+   Bit18 : BOOL ;    //Reserved
+   Bit19 : BOOL ;    //Reserved
+   Bit20 : BOOL ;    //Reserved
+   Bit21 : BOOL ;    //Reserved
+   Bit22 : BOOL ;    //Reserved
+   Bit23 : BOOL ;    //Reserved
+   Bit24 : BOOL ;    //Reserved
+   Bit25 : BOOL ;    //Reserved
+   Bit26 : BOOL ;    //Reserved
+   Bit27 : BOOL ;    //Reserved
+   Bit28 : BOOL ;    //Reserved
+   Bit29 : BOOL ;    //1 = Substitute value
+   Bit30 : BOOL ;    //Reserved
+   Bit31 : BOOL ;    //Reserved
+  END_STRUCT ;   
+END_VAR
+VAR_OUTPUT
+  PV_Out0 : "AnaVal" ;    //Output_00
+  PV_Out1 : "AnaVal" ;    //Output_01
+  PV_Out2 : "AnaVal" ;    //Output_02
+  PV_Out3 : "AnaVal" ;    //Output_03
+  PV_Out4 : "AnaVal" ;    //Output_04
+  PV_Out5 : "AnaVal" ;    //Output_05
+  PV_Out6 : "AnaVal" ;    //Output_06
+  PV_Out7 : "AnaVal" ;    //Output_07
+  PV_Out8 { S7_visible := 'false' }: "AnaVal" ;    //Output_08
+  PV_Out9 { S7_visible := 'false' }: "AnaVal" ;    //Output_09
+  PV_Out10 { S7_visible := 'false' }: "AnaVal";    //Output_10
+  PV_Out11 { S7_visible := 'false' }: "AnaVal";    //Output_11
+  PV_Out12 { S7_visible := 'false' }: "AnaVal";     //Output_12
+  PV_Out13 { S7_visible := 'false' }: "AnaVal";     //Output_13
+  PV_Out14 { S7_visible := 'false' }: "AnaVal";     //Output_14
+  PV_Out15 { S7_visible := 'false' }: "AnaVal";     //Output_15
+  PV_Out16 { S7_visible := 'false' }: "AnaVal";     //Output_16
+  PV_Out17 { S7_visible := 'false' }: "AnaVal";     //Output_17
+  PV_Out18 { S7_visible := 'false' }: "AnaVal";     //Output_18
+  PV_Out19 { S7_visible := 'false' }: "AnaVal";     //Output_19
+  PV_Out20 { S7_visible := 'false' }: "AnaVal";     //Output_20
+  PV_Out21 { S7_visible := 'false' }: "AnaVal";     //Output_21
+  PV_Out22 { S7_visible := 'false' }: "AnaVal";     //Output_22
+  PV_Out23 { S7_visible := 'false' }: "AnaVal";     //Output_23
+  PV_Out24 { S7_visible := 'false' }: "AnaVal";     //Output_24
+  PV_Out25 { S7_visible := 'false' }: "AnaVal";     //Output_25
+  PV_Out26 { S7_visible := 'false' }: "AnaVal";     //Output_26
+  PV_Out27 { S7_visible := 'false' }: "AnaVal";     //Output_27
+  PV_Out28 { S7_visible := 'false' }: "AnaVal";     //Output_28
+  PV_Out29 { S7_visible := 'false' }: "AnaVal";     //Output_29
+  PV_Out30 { S7_visible := 'false' }: "AnaVal";     //Output_30
+  PV_Out31 { S7_visible := 'false' }: "AnaVal";     //Output_31
+ 
+  SimAct { S7_visible := 'false' }: "DigVal";     //1=Simulation active
+ 
+  RdSysStEnOut { S7_visible := 'false' }: BOOL ;    //RdSysSt: 1 = RdSysSt active, 0 = RdSysSt inactive
+  RedCPUOut { S7_visible := 'false' }: BOOL ;    //Controller: 1 = Red. Controller, 0 = Single Controller
+  Rcv1Mstr { S7_visible := 'false' }: BOOL ;    //1 = CPU Rack 0 is Master (Red. CPU)
+  Rcv1Run { S7_visible := 'false' }: BOOL ;    //1 = CPU Rack 0 in RUN (Red. CPU)
+  Rcv1MonErr { S7_dynamic := 'true' }: BOOL ;    //1= No Data Received
+  Rcv1NewData { S7_dynamic := 'true' }: BOOL ;    //1= New Data Received
+  Rcv1Err : BOOL ;    //1= Command Completed with Error
+  Rcv1Stat { S7_visible := 'false' }: WORD ;    //Kind of Error
+  Rcv2Mstr { S7_visible := 'false' }: BOOL ;    //1 = CPU Rack 1 is Master (Red. CPU)
+  Rcv2Run { S7_visible := 'false' }: BOOL ;    //1 = CPU Rack 1 in RUN (Red. CPU)
+  Rcv2MonErr { S7_dynamic := 'true' }: BOOL ;    //1= No Data Received
+  Rcv2NewData { S7_dynamic := 'true' }: BOOL ;    //1= New Data Received
+  Rcv2Err : BOOL ;    //1= Command Completed with Error
+  Rcv2Stat { S7_visible := 'false' }: WORD ;    //Kind of Error
+  SyncLink { S7_visible := 'false' }: BOOL ;    //1 = Syncronisation possible (Red. CPU)  
+  ERR { S7_visible := 'false' }: BOOL ;    //Internal ERROR (Red. CPU)
+END_VAR
+VAR
+  DATLAE : WORD  := W#16#A2;   
+  REC1_CNT : INT ;    //Empfangszдhler
+  REC2_CNT : INT ;    //Empfangszдhler
+  REC1 : STRUCT    
+   sRdSysStEn : BOOL ;    //RdSysSt: 1 = RdSysSt active, 0 = RdSysSt inactive
+   sRedCPUOut : BOOL ;    //Controller: 1 = Red. Controller, 0 = Single Controller
+   sRcv1Run : BOOL ;    //1 = CPU Rack 0 in RUN (Red. CPU)
+   sRcv1Mstr : BOOL ;    //1 = CPU Rack 0 is Master (Red. CPU)
+   sRcv2Run : BOOL ;    //1 = CPU Rack 1 in RUN (Red. CPU)
+   sRcv2Mstr : BOOL ;    //1 = CPU Rack 1 is Master (Red. CPU)
+   sSyncLink : BOOL ;    //1 = Syncronisation possible (Red. CPU)  
+   sERR : BOOL ;    //Internal ERROR (Red. CPU)
+   sRes01 : BOOL ;    //Reserve
+   sRes02 : BOOL ;    //Reserve
+   sRes03 : BOOL ;    //Reserve
+   sRes04 : BOOL ;    //Reserve
+   sRes05 : BOOL ;    //Reserve
+   sRes06 : BOOL ;    //Reserve
+   sRes07 : BOOL ;    //Reserve
+   sRes08 : BOOL ;    //Reserve
+   PV_Out0 : REAL ;   
+   PV_Out1 : REAL ;   
+   PV_Out2 : REAL ;   
+   PV_Out3 : REAL ;   
+   PV_Out4 : REAL ;   
+   PV_Out5 : REAL ;   
+   PV_Out6 : REAL ;   
+   PV_Out7 : REAL ;   
+   PV_Out8 : REAL ;   
+   PV_Out9 : REAL ;   
+   PV_Out10 : REAL ;   
+   PV_Out11 : REAL ;   
+   PV_Out12 : REAL ;   
+   PV_Out13 : REAL ;   
+   PV_Out14 : REAL ;   
+   PV_Out15 : REAL ;   
+   PV_Out16 : REAL ;   
+   PV_Out17 : REAL ;   
+   PV_Out18 : REAL ;   
+   PV_Out19 : REAL ;   
+   PV_Out20 : REAL ;   
+   PV_Out21 : REAL ;   
+   PV_Out22 : REAL ;   
+   PV_Out23 : REAL ;   
+   PV_Out24 : REAL ;   
+   PV_Out25 : REAL ;   
+   PV_Out26 : REAL ;   
+   PV_Out27 : REAL ;   
+   PV_Out28 : REAL ;   
+   PV_Out29 : REAL ;   
+   PV_Out30 : REAL ;   
+   PV_Out31 : REAL ;   
+   PV_Out_ST0 : BYTE  := B#16#80;   
+   PV_Out_ST1 : BYTE  := B#16#80;   
+   PV_Out_ST2 : BYTE  := B#16#80;   
+   PV_Out_ST3 : BYTE  := B#16#80;   
+   PV_Out_ST4 : BYTE  := B#16#80;   
+   PV_Out_ST5 : BYTE  := B#16#80;   
+   PV_Out_ST6 : BYTE  := B#16#80;   
+   PV_Out_ST7 : BYTE  := B#16#80;   
+   PV_Out_ST8 : BYTE  := B#16#80;   
+   PV_Out_ST9 : BYTE  := B#16#80;   
+   PV_Out_ST10 : BYTE  := B#16#80;   
+   PV_Out_ST11 : BYTE  := B#16#80;   
+   PV_Out_ST12 : BYTE  := B#16#80;   
+   PV_Out_ST13 : BYTE  := B#16#80;   
+   PV_Out_ST14 : BYTE  := B#16#80;   
+   PV_Out_ST15 : BYTE  := B#16#80;   
+   PV_Out_ST16 : BYTE  := B#16#80;   
+   PV_Out_ST17 : BYTE  := B#16#80;   
+   PV_Out_ST18 : BYTE  := B#16#80;   
+   PV_Out_ST19 : BYTE  := B#16#80;   
+   PV_Out_ST20 : BYTE  := B#16#80;   
+   PV_Out_ST21 : BYTE  := B#16#80;   
+   PV_Out_ST22 : BYTE  := B#16#80;   
+   PV_Out_ST23 : BYTE  := B#16#80;   
+   PV_Out_ST24 : BYTE  := B#16#80;   
+   PV_Out_ST25 : BYTE  := B#16#80;   
+   PV_Out_ST26 : BYTE  := B#16#80;   
+   PV_Out_ST27 : BYTE  := B#16#80;   
+   PV_Out_ST28 : BYTE  := B#16#80;   
+   PV_Out_ST29 : BYTE  := B#16#80;   
+   PV_Out_ST30 : BYTE  := B#16#80;   
+   PV_Out_ST31 : BYTE  := B#16#80;   
+  END_STRUCT ;   
+  REC2 : STRUCT    
+   sRdSysStEn : BOOL ;    //RdSysSt: 1 = RdSysSt active, 0 = RdSysSt inactive
+   sRedCPUOut : BOOL ;    //Controller: 1 = Red. Controller, 0 = Single Controller
+   sRcv1Run : BOOL ;    //1 = CPU Rack 0 in RUN (Red. CPU)
+   sRcv1Mstr : BOOL ;    //1 = CPU Rack 0 is Master (Red. CPU)
+   sRcv2Run : BOOL ;    //1 = CPU Rack 1 in RUN (Red. CPU)
+   sRcv2Mstr : BOOL ;    //1 = CPU Rack 1 is Master (Red. CPU)
+   sSyncLink : BOOL ;    //1 = Syncronisation possible (Red. CPU)  
+   sERR : BOOL ;    //Internal ERROR (Red. CPU)
+   sRes01 : BOOL ;    //Reserve
+   sRes02 : BOOL ;    //Reserve
+   sRes03 : BOOL ;    //Reserve
+   sRes04 : BOOL ;    //Reserve
+   sRes05 : BOOL ;    //Reserve
+   sRes06 : BOOL ;    //Reserve
+   sRes07 : BOOL ;    //Reserve
+   sRes08 : BOOL ;    //Reserve
+   PV_Out0 : REAL ;   
+   PV_Out1 : REAL ;   
+   PV_Out2 : REAL ;   
+   PV_Out3 : REAL ;   
+   PV_Out4 : REAL ;   
+   PV_Out5 : REAL ;   
+   PV_Out6 : REAL ;   
+   PV_Out7 : REAL ;   
+   PV_Out8 : REAL ;   
+   PV_Out9 : REAL ;   
+   PV_Out10 : REAL ;   
+   PV_Out11 : REAL ;   
+   PV_Out12 : REAL ;   
+   PV_Out13 : REAL ;   
+   PV_Out14 : REAL ;   
+   PV_Out15 : REAL ;   
+   PV_Out16 : REAL ;   
+   PV_Out17 : REAL ;   
+   PV_Out18 : REAL ;   
+   PV_Out19 : REAL ;   
+   PV_Out20 : REAL ;   
+   PV_Out21 : REAL ;   
+   PV_Out22 : REAL ;   
+   PV_Out23 : REAL ;   
+   PV_Out24 : REAL ;   
+   PV_Out25 : REAL ;   
+   PV_Out26 : REAL ;   
+   PV_Out27 : REAL ;   
+   PV_Out28 : REAL ;   
+   PV_Out29 : REAL ;   
+   PV_Out30 : REAL ;   
+   PV_Out31 : REAL ;   
+   PV_Out_ST0 : BYTE  := B#16#80;   
+   PV_Out_ST1 : BYTE  := B#16#80;   
+   PV_Out_ST2 : BYTE  := B#16#80;   
+   PV_Out_ST3 : BYTE  := B#16#80;   
+   PV_Out_ST4 : BYTE  := B#16#80;   
+   PV_Out_ST5 : BYTE  := B#16#80;   
+   PV_Out_ST6 : BYTE  := B#16#80;   
+   PV_Out_ST7 : BYTE  := B#16#80;   
+   PV_Out_ST8 : BYTE  := B#16#80;   
+   PV_Out_ST9 : BYTE  := B#16#80;   
+   PV_Out_ST10 : BYTE  := B#16#80;   
+   PV_Out_ST11 : BYTE  := B#16#80;   
+   PV_Out_ST12 : BYTE  := B#16#80;   
+   PV_Out_ST13 : BYTE  := B#16#80;   
+   PV_Out_ST14 : BYTE  := B#16#80;   
+   PV_Out_ST15 : BYTE  := B#16#80;   
+   PV_Out_ST16 : BYTE  := B#16#80;   
+   PV_Out_ST17 : BYTE  := B#16#80;   
+   PV_Out_ST18 : BYTE  := B#16#80;   
+   PV_Out_ST19 : BYTE  := B#16#80;   
+   PV_Out_ST20 : BYTE  := B#16#80;   
+   PV_Out_ST21 : BYTE  := B#16#80;   
+   PV_Out_ST22 : BYTE  := B#16#80;   
+   PV_Out_ST23 : BYTE  := B#16#80;   
+   PV_Out_ST24 : BYTE  := B#16#80;   
+   PV_Out_ST25 : BYTE  := B#16#80;   
+   PV_Out_ST26 : BYTE  := B#16#80;   
+   PV_Out_ST27 : BYTE  := B#16#80;   
+   PV_Out_ST28 : BYTE  := B#16#80;   
+   PV_Out_ST29 : BYTE  := B#16#80;   
+   PV_Out_ST30 : BYTE  := B#16#80;   
+   PV_Out_ST31 : BYTE  := B#16#80;   
+  END_STRUCT ;   
+  BRCV1 : "BRCV";    //SFB 13
+  BRCV2 : "BRCV";    //SFB 13
+END_VAR
+VAR_TEMP
+  SubOn : BOOL ;    //true = substitution on error active
+END_VAR
+BEGIN
+SubOn:=Feature.Bit29;
+SimAct.Value:=SimOn.Value;
+IF (SimOn.Value) THEN //A7d0//
+    PV_Out0.Value:=SimPV0;
+    PV_Out0.ST:=B#16#60;
+    PV_Out1.Value:=SimPV1;
+    PV_Out1.ST:=B#16#60;
+    PV_Out2.Value:=SimPV2;
+    PV_Out2.ST:=B#16#60;
+    PV_Out3.Value:=SimPV3;
+    PV_Out3.ST:=B#16#60;
+    PV_Out4.Value:=SimPV4;
+    PV_Out4.ST:=B#16#60;
+    PV_Out5.Value:=SimPV5;
+    PV_Out5.ST:=B#16#60;
+    PV_Out6.Value:=SimPV6;
+    PV_Out6.ST:=B#16#60;
+    PV_Out7.Value:=SimPV7;
+    PV_Out7.ST:=B#16#60;
+    PV_Out8.Value:=SimPV8;
+    PV_Out8.ST:=B#16#60;
+    PV_Out9.Value:=SimPV9;
+    PV_Out9.ST:=B#16#60;
+    PV_Out10.Value:=SimPV10;
+    PV_Out10.ST:=B#16#60;
+    PV_Out11.Value:=SimPV11;
+    PV_Out11.ST:=B#16#60;
+    PV_Out12.Value:=SimPV12;
+    PV_Out12.ST:=B#16#60;
+    PV_Out13.Value:=SimPV13;
+    PV_Out13.ST:=B#16#60;
+    PV_Out14.Value:=SimPV14;
+    PV_Out14.ST:=B#16#60;
+    PV_Out15.Value:=SimPV15;
+    PV_Out15.ST:=B#16#60;
+    PV_Out16.Value:=SimPV16;
+    PV_Out16.ST:=B#16#60;
+    PV_Out17.Value:=SimPV17;
+    PV_Out17.ST:=B#16#60;
+    PV_Out18.Value:=SimPV18;
+    PV_Out18.ST:=B#16#60;
+    PV_Out19.Value:=SimPV19;
+    PV_Out19.ST:=B#16#60;
+    PV_Out20.Value:=SimPV20;
+    PV_Out20.ST:=B#16#60;
+    PV_Out21.Value:=SimPV21;
+    PV_Out21.ST:=B#16#60;
+    PV_Out22.Value:=SimPV22;
+    PV_Out22.ST:=B#16#60;
+    PV_Out23.Value:=SimPV23;
+    PV_Out23.ST:=B#16#60;
+    PV_Out24.Value:=SimPV24;
+    PV_Out24.ST:=B#16#60;
+    PV_Out25.Value:=SimPV25;
+    PV_Out25.ST:=B#16#60;
+    PV_Out26.Value:=SimPV26;
+    PV_Out26.ST:=B#16#60;
+    PV_Out27.Value:=SimPV27;
+    PV_Out27.ST:=B#16#60;
+    PV_Out28.Value:=SimPV28;
+    PV_Out28.ST:=B#16#60;
+    PV_Out29.Value:=SimPV29;
+    PV_Out29.ST:=B#16#60;
+    PV_Out30.Value:=SimPV30;
+    PV_Out30.ST:=B#16#60;
+    PV_Out31.Value:=SimPV31;
+    PV_Out31.ST:=B#16#60;
+    REC1_CNT:=0;
+    REC2_CNT:=0;
+    Rcv1MonErr:=FALSE;
+    Rcv2MonErr:=FALSE;
+ELSE //A7d0//
+    BRCV1(EN_R := TRUE // IN: BOOL
+               ,ID := _ID1 // IN: WORD
+               ,R_ID := R_ID1 // IN: DWORD
+               ,RD_1 := REC1 // INOUT: ANY
+               ,LEN := DATLAE // INOUT: WORD
+               );
+ 
+    Rcv1NewData:=BRCV1.NDR;
+    Rcv1Err:=BRCV1.ERROR;
+    Rcv1Stat:=BRCV1.STATUS;
+ 
+    BRCV2(EN_R := TRUE // IN: BOOL
+               ,ID := _ID2 // IN: WORD
+               ,R_ID := R_ID2 // IN: DWORD
+               ,RD_1 := REC2 // INOUT: ANY
+               ,LEN := DATLAE // INOUT: WORD
+               );
+ 
+    Rcv2NewData:=BRCV2.NDR;
+    Rcv2Err:=BRCV2.ERROR;
+    Rcv2Stat:=BRCV2.STATUS;
+ 
+    IF ((NOT(Rcv1Err)) AND Rcv1NewData) THEN //A7d2//
+        RdSysStEnOut:=REC1.sRdSysStEn;
+        RedCPUOut:=REC1.sRedCPUOut;
+        Rcv1Run:=REC1.sRcv1Run;
+        Rcv1Mstr:=REC1.sRcv1Mstr;
+        Rcv2Run:=REC1.sRcv2Run;
+        Rcv2Mstr:=REC1.sRcv2Mstr;
+        SyncLink:=REC1.sSyncLink;
+        ERR:=REC1.sERR;
+        PV_Out0.Value:=REC1.PV_Out0;
+        PV_Out1.Value:=REC1.PV_Out1;
+        PV_Out2.Value:=REC1.PV_Out2;
+        PV_Out3.Value:=REC1.PV_Out3;
+        PV_Out4.Value:=REC1.PV_Out4;
+        PV_Out5.Value:=REC1.PV_Out5;
+        PV_Out6.Value:=REC1.PV_Out6;
+        PV_Out7.Value:=REC1.PV_Out7;
+        PV_Out8.Value:=REC1.PV_Out8;
+        PV_Out9.Value:=REC1.PV_Out9;
+        PV_Out10.Value:=REC1.PV_Out10;
+        PV_Out11.Value:=REC1.PV_Out11;
+        PV_Out12.Value:=REC1.PV_Out12;
+        PV_Out13.Value:=REC1.PV_Out13;
+        PV_Out14.Value:=REC1.PV_Out14;
+        PV_Out15.Value:=REC1.PV_Out15;
+        PV_Out16.Value:=REC1.PV_Out16;
+        PV_Out17.Value:=REC1.PV_Out17;
+        PV_Out18.Value:=REC1.PV_Out18;
+        PV_Out19.Value:=REC1.PV_Out19;
+        PV_Out20.Value:=REC1.PV_Out20;
+        PV_Out21.Value:=REC1.PV_Out21;
+        PV_Out22.Value:=REC1.PV_Out22;
+        PV_Out23.Value:=REC1.PV_Out23;
+        PV_Out24.Value:=REC1.PV_Out24;
+        PV_Out25.Value:=REC1.PV_Out25;
+        PV_Out26.Value:=REC1.PV_Out26;
+        PV_Out27.Value:=REC1.PV_Out27;
+        PV_Out28.Value:=REC1.PV_Out28;
+        PV_Out29.Value:=REC1.PV_Out29;
+        PV_Out30.Value:=REC1.PV_Out30;
+        PV_Out31.Value:=REC1.PV_Out31;
+        PV_Out0.ST:=REC1.PV_Out_ST0;
+        PV_Out1.ST:=REC1.PV_Out_ST1;
+        PV_Out2.ST:=REC1.PV_Out_ST2;
+        PV_Out3.ST:=REC1.PV_Out_ST3;
+        PV_Out4.ST:=REC1.PV_Out_ST4;
+        PV_Out5.ST:=REC1.PV_Out_ST5;
+        PV_Out6.ST:=REC1.PV_Out_ST6;
+        PV_Out7.ST:=REC1.PV_Out_ST7;
+        PV_Out8.ST:=REC1.PV_Out_ST8;
+        PV_Out9.ST:=REC1.PV_Out_ST9;
+        PV_Out10.ST:=REC1.PV_Out_ST10;
+        PV_Out11.ST:=REC1.PV_Out_ST11;
+        PV_Out12.ST:=REC1.PV_Out_ST12;
+        PV_Out13.ST:=REC1.PV_Out_ST13;
+        PV_Out14.ST:=REC1.PV_Out_ST14;
+        PV_Out15.ST:=REC1.PV_Out_ST15;
+        PV_Out16.ST:=REC1.PV_Out_ST16;
+        PV_Out17.ST:=REC1.PV_Out_ST17;
+        PV_Out18.ST:=REC1.PV_Out_ST18;
+        PV_Out19.ST:=REC1.PV_Out_ST19;
+        PV_Out20.ST:=REC1.PV_Out_ST20;
+        PV_Out21.ST:=REC1.PV_Out_ST21;
+        PV_Out22.ST:=REC1.PV_Out_ST22;
+        PV_Out23.ST:=REC1.PV_Out_ST23;
+        PV_Out24.ST:=REC1.PV_Out_ST24;
+        PV_Out25.ST:=REC1.PV_Out_ST25;
+        PV_Out26.ST:=REC1.PV_Out_ST26;
+        PV_Out27.ST:=REC1.PV_Out_ST27;
+        PV_Out28.ST:=REC1.PV_Out_ST28;
+        PV_Out29.ST:=REC1.PV_Out_ST29;
+        PV_Out30.ST:=REC1.PV_Out_ST30;
+        PV_Out31.ST:=REC1.PV_Out_ST31;
+        REC1_CNT:=0;
+        Rcv1MonErr:=FALSE;
+    ELSIF ((NOT(Rcv2Err)) AND Rcv2NewData) THEN //A7d4//
+        RdSysStEnOut:=REC2.sRdSysStEn;
+        RedCPUOut:=REC2.sRedCPUOut;
+        Rcv1Run:=REC2.sRcv1Run;
+        Rcv1Mstr:=REC2.sRcv1Mstr;
+        Rcv2Run:=REC2.sRcv2Run;
+        Rcv2Mstr:=REC2.sRcv2Mstr;
+        SyncLink:=REC2.sSyncLink;
+        ERR:=REC2.sERR;
+        PV_Out0.Value:=REC2.PV_Out0;
+        PV_Out1.Value:=REC2.PV_Out1;
+        PV_Out2.Value:=REC2.PV_Out2;
+        PV_Out3.Value:=REC2.PV_Out3;
+        PV_Out4.Value:=REC2.PV_Out4;
+        PV_Out5.Value:=REC2.PV_Out5;
+        PV_Out6.Value:=REC2.PV_Out6;
+        PV_Out7.Value:=REC2.PV_Out7;
+        PV_Out8.Value:=REC2.PV_Out8;
+        PV_Out9.Value:=REC2.PV_Out9;
+        PV_Out10.Value:=REC2.PV_Out10;
+        PV_Out11.Value:=REC2.PV_Out11;
+        PV_Out12.Value:=REC2.PV_Out12;
+        PV_Out13.Value:=REC2.PV_Out13;
+        PV_Out14.Value:=REC2.PV_Out14;
+        PV_Out15.Value:=REC2.PV_Out15;
+        PV_Out16.Value:=REC2.PV_Out16;
+        PV_Out17.Value:=REC2.PV_Out17;
+        PV_Out18.Value:=REC2.PV_Out18;
+        PV_Out19.Value:=REC2.PV_Out19;
+        PV_Out20.Value:=REC2.PV_Out20;
+        PV_Out21.Value:=REC2.PV_Out21;
+        PV_Out22.Value:=REC2.PV_Out22;
+        PV_Out23.Value:=REC2.PV_Out23;
+        PV_Out24.Value:=REC2.PV_Out24;
+        PV_Out25.Value:=REC2.PV_Out25;
+        PV_Out26.Value:=REC2.PV_Out26;
+        PV_Out27.Value:=REC2.PV_Out27;
+        PV_Out28.Value:=REC2.PV_Out28;
+        PV_Out29.Value:=REC2.PV_Out29;
+        PV_Out30.Value:=REC2.PV_Out30;
+        PV_Out31.Value:=REC2.PV_Out31;
+        PV_Out0.ST:=REC2.PV_Out_ST0;
+        PV_Out1.ST:=REC2.PV_Out_ST1;
+        PV_Out2.ST:=REC2.PV_Out_ST2;
+        PV_Out3.ST:=REC2.PV_Out_ST3;
+        PV_Out4.ST:=REC2.PV_Out_ST4;
+        PV_Out5.ST:=REC2.PV_Out_ST5;
+        PV_Out6.ST:=REC2.PV_Out_ST6;
+        PV_Out7.ST:=REC2.PV_Out_ST7;
+        PV_Out8.ST:=REC2.PV_Out_ST8;
+        PV_Out9.ST:=REC2.PV_Out_ST9;
+        PV_Out10.ST:=REC2.PV_Out_ST10;
+        PV_Out11.ST:=REC2.PV_Out_ST11;
+        PV_Out12.ST:=REC2.PV_Out_ST12;
+        PV_Out13.ST:=REC2.PV_Out_ST13;
+        PV_Out14.ST:=REC2.PV_Out_ST14;
+        PV_Out15.ST:=REC2.PV_Out_ST15;
+        PV_Out16.ST:=REC2.PV_Out_ST16;
+        PV_Out17.ST:=REC2.PV_Out_ST17;
+        PV_Out18.ST:=REC2.PV_Out_ST18;
+        PV_Out19.ST:=REC2.PV_Out_ST19;
+        PV_Out20.ST:=REC2.PV_Out_ST20;
+        PV_Out21.ST:=REC2.PV_Out_ST21;
+        PV_Out22.ST:=REC2.PV_Out_ST22;
+        PV_Out23.ST:=REC2.PV_Out_ST23;
+        PV_Out24.ST:=REC2.PV_Out_ST24;
+        PV_Out25.ST:=REC2.PV_Out_ST25;
+        PV_Out26.ST:=REC2.PV_Out_ST26;
+        PV_Out27.ST:=REC2.PV_Out_ST27;
+        PV_Out28.ST:=REC2.PV_Out_ST28;
+        PV_Out29.ST:=REC2.PV_Out_ST29;
+        PV_Out30.ST:=REC2.PV_Out_ST30;
+        PV_Out31.ST:=REC2.PV_Out_ST31;
+        REC2_CNT:=0;
+        Rcv2MonErr:=FALSE;
+    END_IF; //A7d4//
+ 
+    IF     (((NOT((NOT(Rcv1Err)) AND Rcv1NewData)) OR (((RdSysStEnOut) AND RedCPUOut) AND (NOT(Rcv1Run)))) OR
+        ((NOT((NOT(Rcv2Err)) AND Rcv2NewData)) OR (((RdSysStEnOut) AND RedCPUOut) AND (NOT(Rcv2Run))))) THEN //A7d5//
+        IF (RcvMonCyc>0) THEN //A7d6//
+            IF ((REC1_CNT<RcvMonCyc) OR (REC2_CNT<RcvMonCyc)) THEN //A7d7//
+                IF (REC1_CNT<RcvMonCyc) THEN //A7d8//
+                    Rcv1MonErr:=FALSE;
+                    REC1_CNT:=REC1_CNT+1;
+                ELSE //A7d8//
+                    Rcv1MonErr:=TRUE;
+                END_IF; //A7d9//
+                IF (REC2_CNT<RcvMonCyc) THEN //A7da//
+                    Rcv2MonErr:=FALSE;
+                    REC2_CNT:=REC2_CNT+1;
+                ELSE //A7da//
+                    Rcv2MonErr:=TRUE;
+                END_IF;   
+            ELSE //A7d7//
+                Rcv1MonErr:=TRUE;
+                Rcv2MonErr:=TRUE;
+                Rcv1Run:=FALSE;
+                Rcv1Mstr:=FALSE;
+                Rcv2Run:=FALSE;
+                Rcv2Mstr:=FALSE;
+                SyncLink:=FALSE;
+                ERR:=FALSE;
+                IF (SubOn) THEN //A7dd//
+                    PV_Out0.Value:=SubsPV0;
+                    PV_Out1.Value:=SubsPV1;
+                    PV_Out2.Value:=SubsPV2;
+                    PV_Out3.Value:=SubsPV3;
+                    PV_Out4.Value:=SubsPV4;
+                    PV_Out5.Value:=SubsPV5;
+                    PV_Out6.Value:=SubsPV6;
+                    PV_Out7.Value:=SubsPV7;
+                    PV_Out8.Value:=SubsPV8;
+                    PV_Out9.Value:=SubsPV9;
+                    PV_Out10.Value:=SubsPV10;
+                    PV_Out11.Value:=SubsPV11;
+                    PV_Out12.Value:=SubsPV12;
+                    PV_Out13.Value:=SubsPV13;
+                    PV_Out14.Value:=SubsPV14;
+                    PV_Out15.Value:=SubsPV15;
+                    PV_Out16.Value:=SubsPV16;
+                    PV_Out17.Value:=SubsPV17;
+                    PV_Out18.Value:=SubsPV18;
+                    PV_Out19.Value:=SubsPV19;
+                    PV_Out20.Value:=SubsPV20;
+                    PV_Out21.Value:=SubsPV21;
+                    PV_Out22.Value:=SubsPV22;
+                    PV_Out23.Value:=SubsPV23;
+                    PV_Out24.Value:=SubsPV24;
+                    PV_Out25.Value:=SubsPV25;
+                    PV_Out26.Value:=SubsPV26;
+                    PV_Out27.Value:=SubsPV27;
+                    PV_Out28.Value:=SubsPV28;
+                    PV_Out29.Value:=SubsPV29;
+                    PV_Out30.Value:=SubsPV30;
+                    PV_Out31.Value:=SubsPV31;
+                    PV_Out0.ST:=B#16#60;
+                    PV_Out1.ST:=B#16#60;
+                    PV_Out2.ST:=B#16#60;
+                    PV_Out3.ST:=B#16#60;
+                    PV_Out4.ST:=B#16#60;
+                    PV_Out5.ST:=B#16#60;
+                    PV_Out6.ST:=B#16#60;
+                    PV_Out7.ST:=B#16#60;
+                    PV_Out8.ST:=B#16#60;
+                    PV_Out9.ST:=B#16#60;
+                    PV_Out10.ST:=B#16#60;
+                    PV_Out11.ST:=B#16#60;
+                    PV_Out12.ST:=B#16#60;
+                    PV_Out13.ST:=B#16#60;
+                    PV_Out14.ST:=B#16#60;
+                    PV_Out15.ST:=B#16#60;
+                    PV_Out16.ST:=B#16#60;
+                    PV_Out17.ST:=B#16#60;
+                    PV_Out18.ST:=B#16#60;
+                    PV_Out19.ST:=B#16#60;
+                    PV_Out20.ST:=B#16#60;
+                    PV_Out21.ST:=B#16#60;
+                    PV_Out22.ST:=B#16#60;
+                    PV_Out23.ST:=B#16#60;
+                    PV_Out24.ST:=B#16#60;
+                    PV_Out25.ST:=B#16#60;
+                    PV_Out26.ST:=B#16#60;
+                    PV_Out27.ST:=B#16#60;
+                    PV_Out28.ST:=B#16#60;
+                    PV_Out29.ST:=B#16#60;
+                    PV_Out30.ST:=B#16#60;
+                    PV_Out31.ST:=B#16#60;
+                ELSE //A7dd//
+                    PV_Out0.ST:=B#16#0;
+                    PV_Out1.ST:=B#16#0;
+                    PV_Out2.ST:=B#16#0;
+                    PV_Out3.ST:=B#16#0;
+                    PV_Out4.ST:=B#16#0;
+                    PV_Out5.ST:=B#16#0;
+                    PV_Out6.ST:=B#16#0;
+                    PV_Out7.ST:=B#16#0;
+                    PV_Out8.ST:=B#16#0;
+                    PV_Out9.ST:=B#16#0;
+                    PV_Out10.ST:=B#16#0;
+                    PV_Out11.ST:=B#16#0;
+                    PV_Out12.ST:=B#16#0;
+                    PV_Out13.ST:=B#16#0;
+                    PV_Out14.ST:=B#16#0;
+                    PV_Out15.ST:=B#16#0;
+                    PV_Out16.ST:=B#16#0;
+                    PV_Out17.ST:=B#16#0;
+                    PV_Out18.ST:=B#16#0;
+                    PV_Out19.ST:=B#16#0;
+                    PV_Out20.ST:=B#16#0;
+                    PV_Out21.ST:=B#16#0;
+                    PV_Out22.ST:=B#16#0;
+                    PV_Out23.ST:=B#16#0;
+                    PV_Out24.ST:=B#16#0;
+                    PV_Out25.ST:=B#16#0;
+                    PV_Out26.ST:=B#16#0;
+                    PV_Out27.ST:=B#16#0;
+                    PV_Out28.ST:=B#16#0;
+                    PV_Out29.ST:=B#16#0;
+                    PV_Out30.ST:=B#16#0;
+                    PV_Out31.ST:=B#16#0;
+                END_IF;   
+            END_IF; //A7de//
+        ELSE //A7d6//
+            Rcv1MonErr:=FALSE;
+            Rcv2MonErr:=FALSE;
+        END_IF;
+    END_IF; //A7d5//
+ 
+    IF ((((NOT(Rcv1Err)) AND Rcv1NewData) AND    (((RdSysStEnOut) AND RedCPUOut) AND Rcv1Run)) OR
+        (((NOT(Rcv1Err)) AND Rcv1NewData) AND ((NOT(RdSysStEnOut)) OR (NOT(RedCPUOut))))) THEN //A7e0//
+        REC1_CNT:=0;
+        Rcv1MonErr:=FALSE;
+    END_IF; //A7e0//
+    IF ((((NOT(Rcv2Err)) AND Rcv2NewData) AND (((RdSysStEnOut) AND RedCPUOut) AND Rcv2Run)) OR
+        (((NOT(Rcv2Err)) AND Rcv2NewData) AND ((NOT(RdSysStEnOut)) OR (NOT(RedCPUOut))))) THEN //A7d1//
+        REC2_CNT:=0;
+        Rcv2MonErr:=FALSE;
+    END_IF; //A7d1//
+END_IF;
+ 
+END_FUNCTION_BLOCK

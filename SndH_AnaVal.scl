@@ -1,0 +1,580 @@
+{
+Scl_ResetOptions ;
+Scl_OverwriteBlocks:=           'y' ;
+Scl_GenerateReferenceData :=    'y' ;
+Scl_S7ServerActive:=            'n' ;
+Scl_CreateObjectCode:=          'y' ;
+Scl_OptimizeObjectCode:=        'y' ;
+Scl_MonitorArrayLimits:=        'n' ;
+Scl_CreateDebugInfo :=          'n' ;
+Scl_SetOKFlag:=                 'n' ;
+Scl_SetMaximumStringLength:=    '254'
+}
+ 
+//==========================================================================
+TYPE "AnaVal"
+ 
+  STRUCT    
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+END_TYPE
+//==========================================================================
+TYPE "DigVal"
+ 
+  STRUCT    
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+END_TYPE
+ 
+//==========================================================================
+ 
+FUNCTION_BLOCK FB11172 // "SndH_AnaVal"
+ 
+TITLE ='Send 32 AnaVal Structs with PBK BSEND H'
+AUTHOR : AdvLibIL
+FAMILY : Comm
+NAME : SndH_Ana
+VERSION : '5.0'
+ 
+ 
+VAR_INPUT
+  _ID1 { S7_edit := 'para' }: WORD ;    //Physical Connection ID 1
+  R_ID1 { S7_edit := 'para' }: DWORD ;    //Telegramm Connection ID 1
+  _ID2 { S7_edit := 'para' }: WORD ;    //Physical Connection ID 2
+  R_ID2 { S7_edit := 'para' }: DWORD ;    //Telegramm Connection ID 2
+  RdSysStEn { S7_visible := 'false' }: BOOL  := TRUE;    //RdSysSt: 1 = RdSysSt active, 0 = RdSysSt inactive
+  RedCPU : BOOL  := TRUE;    //Controller: 1 = Red. Controller, 0 = Single Controller
+  SndEn { S7_visible := 'false' }: BOOL  := TRUE;    //1= Send Continuously
+  CylMin : INT  := 1;    //Mimimum Wait Cycle
+  CylMax : INT  := 10;    //Maximum Wait Cycle
+  PV_In_Hys00 : REAL ;    //EDC hysteresis PV_In0
+  PV_In_Hys01 : REAL ;    //EDC hysteresis PV_In1
+  PV_In_Hys02 : REAL ;    //EDC hysteresis PV_In2
+  PV_In_Hys03 : REAL ;    //EDC hysteresis PV_In3
+  PV_In_Hys04 : REAL ;    //EDC hysteresis PV_In4
+  PV_In_Hys05 : REAL ;    //EDC hysteresis PV_In5
+  PV_In_Hys06 : REAL ;    //EDC hysteresis PV_In6
+  PV_In_Hys07 : REAL ;    //EDC hysteresis PV_In7
+  PV_In_Hys08 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In8
+  PV_In_Hys09 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In9
+  PV_In_Hys10 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In10
+  PV_In_Hys11 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In11
+  PV_In_Hys12 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In12
+  PV_In_Hys13 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In13
+  PV_In_Hys14 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In14
+  PV_In_Hys15 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In15
+  PV_In_Hys16 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In16
+  PV_In_Hys17 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In17
+  PV_In_Hys18 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In18
+  PV_In_Hys19 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In19
+  PV_In_Hys20 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In20
+  PV_In_Hys21 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In21
+  PV_In_Hys22 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In22
+  PV_In_Hys23 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In23
+  PV_In_Hys24 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In24
+  PV_In_Hys25 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In25
+  PV_In_Hys26 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In26
+  PV_In_Hys27 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In27
+  PV_In_Hys28 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In28
+  PV_In_Hys29 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In29
+  PV_In_Hys30 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In30
+  PV_In_Hys31 { S7_visible := 'false' }: REAL ;    //EDC hysteresis PV_In31
+  PV_In0 : "AnaVal" ;    //Input_00
+  PV_In1 : "AnaVal" ;     //Input_01
+  PV_In2 : "AnaVal" ;     //Input_02
+  PV_In3 : "AnaVal" ;     //Input_03
+  PV_In4 : "AnaVal" ;     //Input_04
+  PV_In5 : "AnaVal" ;     //Input_05
+  PV_In6 : "AnaVal" ;     //Input_06
+  PV_In7 : "AnaVal" ;     //Input_07
+  PV_In8 { S7_visible := 'false' }: "AnaVal" ;     //Input_08
+  PV_In9 { S7_visible := 'false' }: "AnaVal" ;     //Input_09
+  PV_In10 { S7_visible := 'false' }: "AnaVal" ;     //Input_10
+  PV_In11 { S7_visible := 'false' }: "AnaVal" ;     //Input_11
+  PV_In12 { S7_visible := 'false' }: "AnaVal" ;     //Input_12
+  PV_In13 { S7_visible := 'false' }: "AnaVal" ;     //Input_13
+  PV_In14 { S7_visible := 'false' }: "AnaVal" ;     //Input_14
+  PV_In15 { S7_visible := 'false' }: "AnaVal" ;     //Input_15
+  PV_In16 { S7_visible := 'false' }: "AnaVal" ;     //Input_16
+  PV_In17 { S7_visible := 'false' }: "AnaVal" ;     //Input_17
+  PV_In18 { S7_visible := 'false' }: "AnaVal" ;     //Input_18
+  PV_In19 { S7_visible := 'false' }: "AnaVal" ;     //Input_19
+  PV_In20 { S7_visible := 'false' }: "AnaVal" ;     //Input_20
+  PV_In21 { S7_visible := 'false' }: "AnaVal" ;     //Input_21
+  PV_In22 { S7_visible := 'false' }: "AnaVal" ;     //Input_22
+  PV_In23 { S7_visible := 'false' }: "AnaVal" ;     //Input_23
+  PV_In24 { S7_visible := 'false' }: "AnaVal" ;     //Input_24
+  PV_In25 { S7_visible := 'false' }: "AnaVal" ;     //Input_25
+  PV_In26 { S7_visible := 'false' }: "AnaVal" ;     //Input_26
+  PV_In27 { S7_visible := 'false' }: "AnaVal" ;     //Input_27
+  PV_In28 { S7_visible := 'false' }: "AnaVal" ;     //Input_28
+  PV_In29 { S7_visible := 'false' }: "AnaVal" ;     //Input_29
+  PV_In30 { S7_visible := 'false' }: "AnaVal" ;     //Input_30
+  PV_In31 { S7_visible := 'false' }: "AnaVal" ;     //Input_31
+END_VAR
+VAR_OUTPUT
+  RdSysStEnOut { S7_visible := 'false' }: BOOL ;    //RdSysSt: 1 = RdSysSt active, 0 = RdSysSt inactive
+  RedCPUOut { S7_visible := 'false' }: BOOL ;    //Controller: 1 = Red. Controller, 0 = Single Controller
+  Snd1Mstr { S7_visible := 'false' }: BOOL ;    //1 = CPU Rack 0 is Master (Red. CPU)
+  Snd1Run { S7_visible := 'false' }: BOOL ;    //1 = CPU Rack 0 in RUN (Red. CPU)
+  Snd1Act { S7_dynamic := 'true' }: BOOL ;    //1= Command is Active
+  Snd1Done { S7_dynamic := 'true' }: BOOL ;    //1= Command is Done
+  Snd1Err : BOOL ;    //1= Command Completed with Error
+  Snd1Stat { S7_visible := 'false' }: WORD ;    //Kind of Error
+  Snd2Mstr { S7_visible := 'false' }: BOOL ;    //1 = CPU Rack 1 is Master (Red. CPU)
+  Snd2Run { S7_visible := 'false' }: BOOL ;    //1 = CPU Rack 1 in RUN (Red. CPU)
+  Snd2Act { S7_dynamic := 'true' }: BOOL ;    //1= Command is Active
+  Snd2Done { S7_dynamic := 'true' }: BOOL ;    //1= Command is Done
+  Snd2Err : BOOL ;    //1= Command Completed with Error
+  Snd2Stat { S7_visible := 'false' }: WORD ;    //Kind of Error
+  SyncLink { S7_visible := 'false' }: BOOL ;    //1 = Syncronisation possible (Red. CPU)
+  ERR { S7_visible := 'false' }: BOOL ;    //Internal ERROR (Red. CPU)
+  ErrCode { S7_visible := 'false' }: WORD ;    //Error CODE of RDSYSST (Red. CPU)
+END_VAR
+VAR
+  SEND : STRUCT    
+   sRdSysStEn : BOOL ;    //RdSysSt: 1 = RdSysSt active, 0 = RdSysSt inactive
+   sRedCPUOut : BOOL ;    //Controller: 1 = Red. Controller, 0 = Single Controller
+   sSnd1Run : BOOL ;    //1 = CPU Rack 0 in RUN (Red. CPU)
+   sSnd1Mstr : BOOL ;    //1 = CPU Rack 0 is Master (Red. CPU)
+   sSnd2Run : BOOL ;    //1 = CPU Rack 1 in RUN (Red. CPU)
+   sSnd2Mstr : BOOL ;    //1 = CPU Rack 1 is Master (Red. CPU)
+   sSyncLink : BOOL ;    //1 = Syncronisation possible (Red. CPU)  
+   sERR : BOOL ;    //Internal ERROR (Red. CPU)
+   sRes01 : BOOL ;    //Reserve
+   sRes02 : BOOL ;    //Reserve
+   sRes03 : BOOL ;    //Reserve
+   sRes04 : BOOL ;    //Reserve
+   sRes05 : BOOL ;    //Reserve
+   sRes06 : BOOL ;    //Reserve
+   sRes07 : BOOL ;    //Reserve
+   sRes08 : BOOL ;    //Reserve
+   PV_In00 : REAL ;   
+   PV_In01 : REAL ;   
+   PV_In02 : REAL ;   
+   PV_In03 : REAL ;   
+   PV_In04 : REAL ;   
+   PV_In05 : REAL ;   
+   PV_In06 : REAL ;   
+   PV_In07 : REAL ;   
+   PV_In08 : REAL ;   
+   PV_In09 : REAL ;   
+   PV_In10 : REAL ;   
+   PV_In11 : REAL ;   
+   PV_In12 : REAL ;   
+   PV_In13 : REAL ;   
+   PV_In14 : REAL ;   
+   PV_In15 : REAL ;   
+   PV_In16 : REAL ;   
+   PV_In17 : REAL ;   
+   PV_In18 : REAL ;   
+   PV_In19 : REAL ;   
+   PV_In20 : REAL ;   
+   PV_In21 : REAL ;   
+   PV_In22 : REAL ;   
+   PV_In23 : REAL ;   
+   PV_In24 : REAL ;   
+   PV_In25 : REAL ;   
+   PV_In26 : REAL ;   
+   PV_In27 : REAL ;   
+   PV_In28 : REAL ;   
+   PV_In29 : REAL ;   
+   PV_In30 : REAL ;   
+   PV_In31 : REAL ;   
+   PV_In_ST00 : BYTE  := B#16#80;   
+   PV_In_ST01 : BYTE  := B#16#80;   
+   PV_In_ST02 : BYTE  := B#16#80;   
+   PV_In_ST03 : BYTE  := B#16#80;   
+   PV_In_ST04 : BYTE  := B#16#80;   
+   PV_In_ST05 : BYTE  := B#16#80;   
+   PV_In_ST06 : BYTE  := B#16#80;   
+   PV_In_ST07 : BYTE  := B#16#80;   
+   PV_In_ST08 : BYTE  := B#16#80;   
+   PV_In_ST09 : BYTE  := B#16#80;   
+   PV_In_ST10 : BYTE  := B#16#80;   
+   PV_In_ST11 : BYTE  := B#16#80;   
+   PV_In_ST12 : BYTE  := B#16#80;   
+   PV_In_ST13 : BYTE  := B#16#80;   
+   PV_In_ST14 : BYTE  := B#16#80;   
+   PV_In_ST15 : BYTE  := B#16#80;   
+   PV_In_ST16 : BYTE  := B#16#80;   
+   PV_In_ST17 : BYTE  := B#16#80;   
+   PV_In_ST18 : BYTE  := B#16#80;   
+   PV_In_ST19 : BYTE  := B#16#80;   
+   PV_In_ST20 : BYTE  := B#16#80;   
+   PV_In_ST21 : BYTE  := B#16#80;   
+   PV_In_ST22 : BYTE  := B#16#80;   
+   PV_In_ST23 : BYTE  := B#16#80;   
+   PV_In_ST24 : BYTE  := B#16#80;   
+   PV_In_ST25 : BYTE  := B#16#80;   
+   PV_In_ST26 : BYTE  := B#16#80;   
+   PV_In_ST27 : BYTE  := B#16#80;   
+   PV_In_ST28 : BYTE  := B#16#80;   
+   PV_In_ST29 : BYTE  := B#16#80;   
+   PV_In_ST30 : BYTE  := B#16#80;   
+   PV_In_ST31 : BYTE  := B#16#80;   
+  END_STRUCT ;   
+  Z_MAX : INT ;    //Zwangsьbertragung
+  Z_MIN : INT ;    //Ьbertragungsperre
+  REQ1 : BOOL ;    //Ьbertragungsrequest
+  REQ2 : BOOL ;    //Ьbertragungsrequest
+  DATLAE : WORD  := W#16#A2;   
+  BSEND1 : "BSEND";    //SFB 12
+  BSEND2 : "BSEND";    //SFB 12
+  iRET : INT ;   
+  SZL_HEADER : STRUCT    
+   LENTHDR : WORD ;   
+   N_DR : WORD ;   
+  END_STRUCT ;   
+  DR : STRUCT    
+   RedInf : WORD ;    //Information about Redundancy
+   MwStat : WORD ;    //Status Byte 1+2
+   HSFCInfo : WORD ;    //Info SFC 90 "H_CTRL"
+   SamFehl : WORD ;    //Reserved
+   Bz_CPU_0 : WORD ;    //Mode for CPU(0)
+   Bz_CPU_1 : WORD ;    //Mode for CPU(1)
+   Bz_CPU_2 : WORD ;    //Reserved
+   CPU_Valid : BYTE ;    //Validity of variables (Bz_CPU_0 and Bz_CPU_1)
+   HSync_F : BYTE ;    //Status of connection quality
+  END_STRUCT ;   
+  BUSY : BOOL ;   
+  STATE : WORD ;    //State WORD
+  STATE_bool AT STATE: ARRAY[0..15] OF BOOL;
+END_VAR
+VAR_TEMP
+  sbCOM : BOOL ;   
+  swH0Cond : WORD ;    //Condition of CPU Rack 0
+  swH1Cond : WORD ;    //Condition of CPU Rack 1
+END_VAR
+BEGIN
+ 
+swH0Cond:=W#16#0;
+swH1Cond:=W#16#0;
+RedCPUOut:=RedCPU;
+RdSysStEnOut:=RdSysStEn;
+ 
+IF RdSysStEnOut AND RedCPUOut THEN //A7d0//
+ 
+    iRET:=RDSYSST(REQ :=  RedCPUOut // IN: BOOL
+            ,SZL_ID := W#16#71 // IN: WORD
+            ,INDEX := W#16#0 // IN: WORD
+            ,BUSY := BUSY // OUT: BOOL
+            ,SZL_HEADER := SZL_HEADER // OUT: STRUCT
+            ,DR := DR // OUT: ANY
+            ); // INT
+ 
+    STATE:=DR.MwStat;
+    IF iRET<>0 THEN //A7d1//
+        ERR:=TRUE;
+    ELSIF iRET=0 THEN //A7d3//
+        ERR:=FALSE;
+    END_IF; //A7d3//
+   
+    ErrCode:=INT_TO_WORD(iRET);
+    Snd1Mstr:=STATE_bool[4];
+    Snd2Mstr:=STATE_bool[5];
+    SyncLink:=STATE_bool[8];
+    swH0Cond:=DR.Bz_CPU_0;
+    swH1Cond:=DR.Bz_CPU_1;
+   
+    IF (swH0Cond=W#16#8) OR (swH0Cond=W#16#9) THEN //A7d4//
+        Snd1Run:=TRUE;
+    ELSE //A7d4//
+        Snd1Run:=FALSE;
+    END_IF; //A7d5//
+   
+    IF (swH1Cond=W#16#8) OR (swH1Cond=W#16#9) THEN //A7d6//
+        Snd2Run:=TRUE;
+    ELSE //A7d6//
+        Snd2Run:=FALSE;
+    END_IF;
+ELSE //A7d0//
+    Snd1Mstr:=FALSE;
+    Snd1Run:=FALSE;
+    Snd2Mstr:=FALSE;
+    Snd2Run:=FALSE;
+    SyncLink:=FALSE;
+END_IF; //A7d8//
+ 
+sbCOM:=FALSE;
+IF (SndEn) THEN //A7d9//
+    IF ((Snd1Err) AND Snd2Err) THEN //A7da//
+        REQ1:=NOT(REQ1);
+        REQ2:=NOT(REQ2);
+    ELSE
+        IF ((Snd1Done) OR Snd2Done) THEN //A7dc//
+            REQ1:=FALSE;
+            REQ2:=FALSE;
+        ELSE
+            IF ((NOT(REQ1)) OR (NOT(REQ2))) THEN //A7de//
+                sbCOM:=((SEND.sRdSysStEn) XOR RdSysStEn) OR sbCOM;
+                sbCOM:=((SEND.sRedCPUOut) XOR RedCPUOut) OR sbCOM;
+                sbCOM:=((SEND.sSnd1Run) XOR Snd1Run) OR sbCOM;
+                sbCOM:=((SEND.sSnd1Mstr) XOR Snd1Mstr) OR sbCOM;
+                sbCOM:=((SEND.sSnd2Run) XOR Snd2Run) OR sbCOM;
+                sbCOM:=((SEND.sSnd2Mstr) XOR Snd2Mstr) OR sbCOM;
+                sbCOM:=((SEND.sSyncLink) XOR SyncLink) OR sbCOM;
+                sbCOM:=((SEND.sERR) XOR ERR) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In00-PV_In0.Value)>PV_In_Hys00) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In01-PV_In1.Value)>PV_In_Hys01) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In02-PV_In2.Value)>PV_In_Hys02) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In03-PV_In3.Value)>PV_In_Hys03) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In04-PV_In4.Value)>PV_In_Hys04) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In05-PV_In5.Value)>PV_In_Hys05) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In06-PV_In6.Value)>PV_In_Hys06) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In07-PV_In7.Value)>PV_In_Hys07) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In08-PV_In8.Value)>PV_In_Hys08) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In09-PV_In9.Value)>PV_In_Hys09) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In10-PV_In10.Value)>PV_In_Hys10) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In11-PV_In11.Value)>PV_In_Hys11) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In12-PV_In12.Value)>PV_In_Hys12) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In13-PV_In13.Value)>PV_In_Hys13) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In14-PV_In14.Value)>PV_In_Hys14) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In15-PV_In15.Value)>PV_In_Hys15) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In16-PV_In16.Value)>PV_In_Hys16) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In17-PV_In17.Value)>PV_In_Hys17) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In18-PV_In18.Value)>PV_In_Hys18) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In19-PV_In19.Value)>PV_In_Hys19) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In20-PV_In20.Value)>PV_In_Hys20) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In21-PV_In21.Value)>PV_In_Hys21) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In22-PV_In22.Value)>PV_In_Hys22) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In23-PV_In23.Value)>PV_In_Hys23) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In24-PV_In24.Value)>PV_In_Hys24) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In25-PV_In25.Value)>PV_In_Hys25) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In26-PV_In26.Value)>PV_In_Hys26) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In27-PV_In27.Value)>PV_In_Hys27) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In28-PV_In28.Value)>PV_In_Hys28) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In29-PV_In29.Value)>PV_In_Hys29) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In30-PV_In30.Value)>PV_In_Hys30) OR sbCOM;
+                sbCOM:=(ABS(SEND.PV_In31-PV_In31.Value)>PV_In_Hys31) OR sbCOM;
+               
+                IF (Z_MIN>0) THEN //A7df//
+                    sbCOM:=FALSE;
+                END_IF; //A7df//
+               
+                IF (sbCOM) THEN //A7e0//
+                    Z_MIN:=CylMin;
+                    Z_MAX:=0;
+                ELSE
+                    IF (Z_MAX>CylMax) THEN //A7e1//
+                        sbCOM:=TRUE;
+                        Z_MAX:=0;
+                    END_IF;   
+                END_IF; //A7e1//
+               
+                REQ1:=sbCOM;
+                REQ2:=sbCOM;
+               
+                IF (sbCOM) THEN //A7db//
+                    SEND.sRdSysStEn:=RdSysStEn;
+                    SEND.sRedCPUOut:=RedCPUOut;
+                    SEND.sSnd1Run:=Snd1Run;
+                    SEND.sSnd1Mstr:=Snd1Mstr;
+                    SEND.sSnd2Run:=Snd2Run;
+                    SEND.sSnd2Mstr:=Snd2Mstr;
+                    SEND.sSyncLink:=SyncLink;
+                    SEND.sERR:=ERR;
+                    SEND.PV_In00:=PV_In0.Value;
+                    SEND.PV_In01:=PV_In1.Value;
+                    SEND.PV_In02:=PV_In2.Value;
+                    SEND.PV_In03:=PV_In3.Value;
+                    SEND.PV_In04:=PV_In4.Value;
+                    SEND.PV_In05:=PV_In5.Value;
+                    SEND.PV_In06:=PV_In6.Value;
+                    SEND.PV_In07:=PV_In7.Value;
+                    SEND.PV_In08:=PV_In8.Value;
+                    SEND.PV_In09:=PV_In9.Value;
+                    SEND.PV_In10:=PV_In10.Value;
+                    SEND.PV_In11:=PV_In11.Value;
+                    SEND.PV_In12:=PV_In12.Value;
+                    SEND.PV_In13:=PV_In13.Value;
+                    SEND.PV_In14:=PV_In14.Value;
+                    SEND.PV_In15:=PV_In15.Value;
+                    SEND.PV_In16:=PV_In16.Value;
+                    SEND.PV_In17:=PV_In17.Value;
+                    SEND.PV_In18:=PV_In18.Value;
+                    SEND.PV_In19:=PV_In19.Value;
+                    SEND.PV_In20:=PV_In20.Value;
+                    SEND.PV_In21:=PV_In21.Value;
+                    SEND.PV_In22:=PV_In22.Value;
+                    SEND.PV_In23:=PV_In23.Value;
+                    SEND.PV_In24:=PV_In24.Value;
+                    SEND.PV_In25:=PV_In25.Value;
+                    SEND.PV_In26:=PV_In26.Value;
+                    SEND.PV_In27:=PV_In27.Value;
+                    SEND.PV_In28:=PV_In28.Value;
+                    SEND.PV_In29:=PV_In29.Value;
+                    SEND.PV_In30:=PV_In30.Value;
+                    SEND.PV_In31:=PV_In31.Value;
+                    SEND.PV_In_ST00:=PV_In0.ST;
+                    SEND.PV_In_ST01:=PV_In1.ST;
+                    SEND.PV_In_ST02:=PV_In2.ST;
+                    SEND.PV_In_ST03:=PV_In3.ST;
+                    SEND.PV_In_ST04:=PV_In4.ST;
+                    SEND.PV_In_ST05:=PV_In5.ST;
+                    SEND.PV_In_ST06:=PV_In6.ST;
+                    SEND.PV_In_ST07:=PV_In7.ST;
+                    SEND.PV_In_ST08:=PV_In8.ST;
+                    SEND.PV_In_ST09:=PV_In9.ST;
+                    SEND.PV_In_ST10:=PV_In10.ST;
+                    SEND.PV_In_ST11:=PV_In11.ST;
+                    SEND.PV_In_ST12:=PV_In12.ST;
+                    SEND.PV_In_ST13:=PV_In13.ST;
+                    SEND.PV_In_ST14:=PV_In14.ST;
+                    SEND.PV_In_ST15:=PV_In15.ST;
+                    SEND.PV_In_ST16:=PV_In16.ST;
+                    SEND.PV_In_ST17:=PV_In17.ST;
+                    SEND.PV_In_ST18:=PV_In18.ST;
+                    SEND.PV_In_ST19:=PV_In19.ST;
+                    SEND.PV_In_ST20:=PV_In20.ST;
+                    SEND.PV_In_ST21:=PV_In21.ST;
+                    SEND.PV_In_ST22:=PV_In22.ST;
+                    SEND.PV_In_ST23:=PV_In23.ST;
+                    SEND.PV_In_ST24:=PV_In24.ST;
+                    SEND.PV_In_ST25:=PV_In25.ST;
+                    SEND.PV_In_ST26:=PV_In26.ST;
+                    SEND.PV_In_ST27:=PV_In27.ST;
+                    SEND.PV_In_ST28:=PV_In28.ST;
+                    SEND.PV_In_ST29:=PV_In29.ST;
+                    SEND.PV_In_ST30:=PV_In30.ST;
+                    SEND.PV_In_ST31:=PV_In31.ST;
+                    Snd1Act:=TRUE;
+                    Snd2Act:=TRUE;
+                END_IF;
+            ELSE //A7de//
+                REQ1:=FALSE;
+                REQ2:=FALSE;
+            END_IF;   
+        END_IF;
+    END_IF; //A7db//
+   
+    BSEND1(REQ := REQ1 // IN: BOOL
+            ,R := FALSE // IN: BOOL
+            ,ID := _ID1 // IN: WORD
+            ,R_ID := R_ID1 // IN: DWORD
+            ,SD_1 := SEND // INOUT: ANY
+            ,LEN := DATLAE // INOUT: WORD
+            );
+ 
+    IF (BSEND1.STATUS=W#16#B) THEN //A7e4//
+   
+        BSEND1(REQ := FALSE // IN: BOOL
+            ,R := FALSE // IN: BOOL
+            ,ID := _ID1 // IN: WORD
+            ,R_ID := R_ID1 // IN: DWORD
+            ,SD_1 := SEND // INOUT: ANY
+            ,LEN := DATLAE // INOUT: WORD
+            );
+ 
+        REQ1:=FALSE;
+    END_IF; //A7e4//
+   
+    Snd1Done:=BSEND1.DONE;
+    Snd1Err:=BSEND1.ERROR;
+    Snd1Stat:=BSEND1.STATUS;
+ 
+    BSEND2(REQ := REQ2 // IN: BOOL
+            ,R := FALSE // IN: BOOL
+            ,ID := _ID2 // IN: WORD
+            ,R_ID := R_ID2 // IN: DWORD
+            ,SD_1 := SEND // INOUT: ANY
+            ,LEN := DATLAE // INOUT: WORD
+            );
+   
+    IF (BSEND2.STATUS=W#16#B) THEN //A7e5//
+ 
+        BSEND2(REQ := FALSE // IN: BOOL
+            ,R := FALSE // IN: BOOL
+            ,ID := _ID2 // IN: WORD
+            ,R_ID := R_ID2 // IN: DWORD
+            ,SD_1 := SEND // INOUT: ANY
+            ,LEN := DATLAE // INOUT: WORD
+            );
+   
+        REQ2:=FALSE;
+    END_IF; //A7e5//
+   
+    Snd2Done:=BSEND2.DONE;
+    Snd2Err:=BSEND2.ERROR;
+    Snd2Stat:=BSEND2.STATUS;
+   
+    IF (Z_MIN>0) THEN //A7e6//
+        Z_MIN:=Z_MIN-1;
+    END_IF; //A7e6//
+    Z_MAX:=Z_MAX+1;
+ELSE
+    IF ((REQ1) OR REQ2) THEN //A7e8//
+ 
+        BSEND1(REQ := FALSE // IN: BOOL
+                ,R := TRUE // IN: BOOL
+                ,ID := _ID1 // IN: WORD
+                ,R_ID := R_ID1 // IN: DWORD
+                ,SD_1 := SEND // INOUT: ANY
+                ,LEN := DATLAE // INOUT: WORD
+                );
+ 
+        BSEND2(REQ := FALSE // IN: BOOL
+                ,R := TRUE // IN: BOOL
+                ,ID := _ID2 // IN: WORD
+                ,R_ID := R_ID2 // IN: DWORD
+                ,SD_1 := SEND // INOUT: ANY
+                ,LEN := DATLAE // INOUT: WORD
+                );
+ 
+        REQ1:=FALSE;
+        REQ2:=FALSE;
+       
+        BSEND1(REQ := TRUE // IN: BOOL
+                ,R := TRUE // IN: BOOL
+                ,ID := _ID1 // IN: WORD
+                ,R_ID := R_ID1 // IN: DWORD
+                ,SD_1 := SEND // INOUT: ANY
+                ,LEN := DATLAE // INOUT: WORD
+                );
+       
+        BSEND2(REQ := TRUE // IN: BOOL
+                ,R := TRUE // IN: BOOL
+                ,ID := _ID2 // IN: WORD
+                ,R_ID := R_ID2 // IN: DWORD
+                ,SD_1 := SEND // INOUT: ANY
+                ,LEN := DATLAE // INOUT: WORD
+                );
+       
+        BSEND1(REQ := FALSE // IN: BOOL
+                ,R := FALSE // IN: BOOL
+                ,ID := _ID1 // IN: WORD
+                ,R_ID := R_ID1 // IN: DWORD
+                ,SD_1 := SEND // INOUT: ANY
+                ,LEN := DATLAE // INOUT: WORD
+                );
+       
+        BSEND2(REQ := FALSE // IN: BOOL
+                ,R := FALSE // IN: BOOL
+                ,ID := _ID2 // IN: WORD
+                ,R_ID := R_ID2 // IN: DWORD
+                ,SD_1 := SEND // INOUT: ANY
+                ,LEN := DATLAE // INOUT: WORD
+                );
+       
+        Snd1Done:=BSEND1.DONE;
+        Snd1Err:=BSEND1.ERROR;
+        Snd1Stat:=BSEND1.STATUS;
+        Snd2Done:=BSEND2.DONE;
+        Snd2Err:=BSEND2.ERROR;
+        Snd2Stat:=BSEND2.STATUS;
+    END_IF; //A7e8//
+ 
+    Snd1Act:=FALSE;
+    Snd2Act:=FALSE;
+    Z_MIN:=0;
+    Z_MAX:=0;
+ 
+END_IF; //A7e7//
+ 
+ 
+END_FUNCTION_BLOCK
+ 
+//==========================================================================
+ 

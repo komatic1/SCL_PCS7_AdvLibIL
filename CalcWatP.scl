@@ -1,0 +1,875 @@
+{
+Scl_ResetOptions ;
+Scl_OverwriteBlocks:=           'y' ;
+Scl_GenerateReferenceData :=    'y' ;
+Scl_S7ServerActive:=            'n' ;
+Scl_CreateObjectCode:=          'y' ;
+Scl_OptimizeObjectCode:=        'y' ;
+Scl_MonitorArrayLimits:=        'n' ;
+Scl_CreateDebugInfo :=          'y' ;
+Scl_SetOKFlag:=                 'n' ;
+Scl_SetMaximumStringLength:=    '254'
+}
+ 
+//=====================================
+ 
+ 
+FUNCTION_BLOCK FB11144 // "CalcWatP"
+TITLE ='CalcWatP Thermal Power and Thermal Energy for Water'
+{ S7_m_c := 'true'; S7_alarm_ui := '1'; S7_language := '9(1) English (United States)  19.02.2014  16:04:02'; S7_tasklist := 'OB100' }
+AUTHOR : AdvLibIL
+FAMILY : HVAC
+NAME : CalcWatP
+VERSION : '5.0'
+ 
+ 
+VAR_INPUT
+  Restart { S7_visible := 'false'; S7_dynamic := 'true' }: BOOL ;    //Manual Restart
+  RstEnergyLi : STRUCT     //Linkable Input Reset Energy_Out
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  RstEnergy2Li : STRUCT     //Linkable Input Reset Energy2Out
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  MS_RelOp { Op_Level := '3'; S7_m_c := 'true'; S7_visible := 'false' }: BOOL ;    //Operator input for MS Release, 1:MS release requirement
+  OnOp { Op_Level := '1'; S7_m_c := 'true'; S7_visible := 'false' }: BOOL ;    //1=On Mode: On Mode by Operator
+  OosOp { Op_Level := '2'; S7_m_c := 'true'; S7_visible := 'false' }: BOOL ;    //1=Oos Mode: Oos Mode by Operator
+  OosLi { S7_dynamic := 'true' }: STRUCT     //1=Oos Mode: Oos Mode by Field Signal                 
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  UserAna1 { S7_m_c := 'true'; S7_visible := 'false'; S7_xm_c := 'Value,true;'; S7_xqc := 'Value,true;'; S7_xshortcut := 'Value,;' }: STRUCT     //User Analog Input 1
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#FF;    //Signal Status
+  END_STRUCT ;   
+  UA1unit { S7_m_c := 'true'; S7_unit := ''; S7_visible := 'false' }: INT ;    //Unit of UserAna1
+  UserAna2 { S7_m_c := 'true'; S7_visible := 'false'; S7_xm_c := 'Value,true;'; S7_xqc := 'Value,true;'; S7_xshortcut := 'Value,;' }: STRUCT     //User Analog Input 2
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#FF;    //Signal Status
+  END_STRUCT ;   
+  UA2unit { S7_m_c := 'true'; S7_unit := ''; S7_visible := 'false' }: INT ;    //Unit of UserAna2
+  SampleTime { S7_visible := 'false'; S7_link := 'false'; S7_sampletime := 'true'; S7_param := 'false' }: REAL  := 1.000000e-001;    //Sample time  [s]
+  StartEnergy { Op_Level := '2'; S7_m_c := 'true'; S7_unit := 'kWh'; S7_shortcut := 'start energy' }: REAL ;    //Start Value for Energy_Out when restarting the CPU
+  MinPower { Op_Level := '2'; S7_visible := 'false'; S7_m_c := 'true'; S7_param := 'true'; S7_shortcut := 'min. power' }: REAL ;    //Minimum Power for QTH_POW [F_POWER*kW]
+  FactPower { Op_Level := '2'; S7_visible := 'false'; S7_m_c := 'true'; S7_param := 'true'; S7_shortcut := 'factor power' }: REAL  := 1.0;    //Factor for Units of Power
+  FactEnergy { Op_Level := '2'; S7_visible := 'false'; S7_m_c := 'true'; S7_param := 'true'; S7_shortcut := 'factor energy' }: REAL  := 1.0;    //Factor for Units of Energy
+  RstEnergyOp { Op_Level := '1'; S7_visible := 'false'; S7_m_c := 'true'; S7_param := 'true'; S7_string_0 := 'inactive'; S7_string_1 := 'active' }: BOOL ;    //Operator Input Reset Energy_Out       
+  RstEnergy2Op { Op_Level := '1'; S7_visible := 'false'; S7_m_c := 'true'; S7_param := 'true'; S7_string_0 := 'inactive'; S7_string_1 := 'active' }: BOOL ;    //Operator Input Reset Energy2Out
+  TempFor { S7_dynamic := 'true'; S7_m_c := 'true'; S7_edit := 'para'; S7_xm_c := 'Value,true;'; S7_xqc := 'Value,true;'; S7_xshortcut := 'Value,;' }: STRUCT     //forerun temperature [°C]
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  TempFor_Unit { S7_m_c := 'true'; S7_unit := ''; S7_edit := 'para' }: INT  := 1001;    //Unit of TempFor
+  TempRet { S7_dynamic := 'true'; S7_m_c := 'true'; S7_edit := 'para'; S7_xm_c := 'Value,true;'; S7_xqc := 'Value,true;'; S7_xshortcut := 'Value,;' }: STRUCT     //return temperature  [°C]
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  TempRet_Unit { S7_m_c := 'true'; S7_unit := ''; S7_edit := 'para' }: INT  := 1001;    //Unit of TempRet
+  VolFlowRat { S7_dynamic := 'true'; S7_m_c := 'true'; S7_edit := 'para'; S7_xm_c := 'Value,true;'; S7_xqc := 'Value,true;'; S7_xshortcut := 'Value,;' }: STRUCT     //Volume Flow Rate [mі/h]
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  VolFlowRat_Unit { S7_m_c := 'true'; S7_unit := ''; S7_edit := 'para' }: INT  := 1349;    //Unit of VolFlowRat
+  VolMeasFor { S7_string_0 := 'return'; S7_string_1 := 'forerun' }: BOOL  := TRUE;    //Location of Volume Measurement (1=forerun)
+  VolFlowCSF : STRUCT     //Volume Flow Rate (VolFlowRat) faulty
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  TempForCSF : STRUCT     //forerun temperature (TempFor) faulty
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  TempRetCSF : STRUCT     //return temperature  (TempRet) faulty
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  Power_OpScale { S7_edit := 'para'; S7_m_c := 'true'; S7_xedit := 'High,para;Low,para;'; S7_xm_c := 'High,true;Low,true;' }: STRUCT     //Power Trend Display Limits for OS
+   High : REAL  := 5.000000e+004;    //High Value
+   Low : REAL ;    //Low Value
+  END_STRUCT ;   
+  Power_Unit { S7_m_c := 'true'; S7_unit := ''; S7_edit := 'para' }: INT  := 1190;    //Unit of Power_Out
+  Energy_Unit { S7_m_c := 'true'; S7_unit := ''; S7_edit := 'para' }: INT  := 1179;    //Unit of Energy_Out
+  MsgLock { S7_visible := 'false' }: STRUCT     //Messages locked
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  ExtMsg1 { S7_visible := 'false' }: STRUCT     //External Message 1
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  ExtMsg2 { S7_visible := 'false' }: STRUCT     //External Message 2
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  ExtMsg3 { S7_visible := 'false' }: STRUCT     //External Message 3
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  ExtMsg4 { S7_visible := 'false' }: STRUCT     //External Message 4
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  ExtVal04 { S7_visible := 'false' }: ANY ;    //External Value 4
+  ExtVal05 { S7_visible := 'false' }: ANY ;    //External Value 5
+  ExtVal06 { S7_visible := 'false' }: ANY ;    //External Value 6
+  ExtVal07 { S7_visible := 'false' }: ANY ;    //External Value 7
+  ExtVal08 { S7_visible := 'false' }: ANY ;    //External Value 8
+  ExtVal09 { S7_visible := 'false' }: ANY ;    //External Value 9
+  ExtVal10 { S7_visible := 'false' }: ANY ;    //External Value 10
+  SimLiOp { S7_visible := 'false' }: STRUCT     //Simulation on/off via 0 = Operator, 1 = Interconnection or SFC
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  SimOnLi { S7_visible := 'false' }: STRUCT     //1 = Simulation activated by interconnection or SFC (controlled by SimLiOp = 1)
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  SimOn { Op_Level := '3'; S7_visible := 'false'; S7_m_c := 'true' }: BOOL ;    //Simulation On/Off
+  SimTempFor { Op_Level := '1'; S7_visible := 'false'; S7_m_c := 'true' }: REAL ;    //Simulation TempFor
+  SimTempFor_Li { S7_visible := 'false' }: STRUCT     //Linkable simulation value TempFor
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  SimTempRet { Op_Level := '1'; S7_visible := 'false'; S7_m_c := 'true' }: REAL ;    //Simulation TempRet
+  SimTempRet_Li { S7_visible := 'false' }: STRUCT     //Linkable simulation value TempRet
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  SimVolFlowRat { Op_Level := '1'; S7_visible := 'false'; S7_m_c := 'true' }: REAL ;    //Simulation VolFlowRat
+  SimVolFlowRat_Li { S7_visible := 'false' }: STRUCT     //Linkable simulation value VolFlowRat
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  MsgEvId { S7_visible := 'false'; S7_link := 'false'; S7_param := 'false'; S7_server := 'alarm_archiv'; S7_a_type := 'alarm_8p' }: DWORD ;    //Message ID
+  RunUpCyc { S7_visible := 'false' }: INT  := 10;    //Lag: Number of Run Up Cycles
+  BatchEn { S7_visible := 'false' }: BOOL ;    //Enable Remote Operation of Controller by Batch Receipe                        
+  BatchID { S7_visible := 'false'; S7_m_c := 'true' }: DWORD ;    //Current Batch ID (number)
+  BatchName { S7_visible := 'false'; S7_m_c := 'true' }: STRING  [32 ];    //Current Batch Name
+  StepNo { S7_visible := 'false'; S7_m_c := 'true' }: DWORD ;    //Batch Step Number
+  Occupied { S7_visible := 'false' }: BOOL ;    //Occupied by Batch
+  UserStatus { S7_visible := 'false'; S7_m_c := 'true' }: BYTE ;    //User Status Bits
+  SelFp1 { S7_visible := 'false'; BLK_Jump := '1' }: ANY ;    //Select Faceplate 1
+  SelFp2 { S7_visible := 'false'; BLK_Jump := '1' }: ANY ;    //Select Faceplate 2
+  OS_Perm { S7_visible := 'false' }: STRUCT     //Operator Permissions
+   Bit0 : BOOL  := TRUE;    //Reserved
+   Bit1 : BOOL  := TRUE;    //1 = Operator can switch to On
+   Bit2 : BOOL  := TRUE;    //Reserved
+   Bit3 : BOOL  := TRUE;    //1 = Operator can switch to OOS
+   Bit4 : BOOL  := TRUE;    //Reserved
+   Bit5 : BOOL  := TRUE;    //Reserved
+   Bit6 : BOOL  := TRUE;    //Reserved
+   Bit7 : BOOL  := TRUE;    //1 = Operator can reset accumulated energy 1 value
+   Bit8 : BOOL  := TRUE;    //1 = Operator can reset accumulated energy 2 value
+   Bit9 : BOOL  := TRUE;    //Reserved
+   Bit10 : BOOL  := TRUE;    //Reserved
+   Bit11 : BOOL  := TRUE;    //1 = Operator can enable function simulation
+   Bit12 : BOOL  := TRUE;    //1 = Operator can enable function maintenance release
+   Bit13 : BOOL  := TRUE;    //Reserved
+   Bit14 : BOOL  := TRUE;    //Reserved
+   Bit15 : BOOL  := TRUE;    //Reserved
+   Bit16 : BOOL  := TRUE;    //1 = Operator can enter factor power
+   Bit17 : BOOL  := TRUE;    //1 = Operator can enter factor energy
+   Bit18 : BOOL  := TRUE;    //1 = Operator can enter minmale power
+   Bit19 : BOOL  := TRUE;    //Reserved
+   Bit20 : BOOL  := TRUE;    //Reserved
+   Bit21 : BOOL  := TRUE;    //Reserved
+   Bit22 : BOOL  := TRUE;    //Reserved
+   Bit23 : BOOL  := TRUE;    //Reserved
+   Bit24 : BOOL  := TRUE;    //Reserved
+   Bit25 : BOOL  := TRUE;    //Reserved
+   Bit26 : BOOL  := TRUE;    //Reserved
+   Bit27 : BOOL  := TRUE;    //Reserved
+   Bit28 : BOOL  := TRUE;    //Reserved
+   Bit29 : BOOL  := TRUE;    //Reserved
+   Bit30 : BOOL  := TRUE;    //Reserved
+   Bit31 : BOOL  := TRUE;    //Reserved
+  END_STRUCT ;   
+  OS_Perm_ar AT OS_Perm : ARRAY[0..3] OF BYTE;
+  OpSt_In { BLK_Jump := '1'; S7_visible := 'false' }: DWORD ;    //Enabled operator stations
+  Feature { S7_visible := 'false'; S7_xedit := 'Bit0,para;Bit1,para;Bit22,para;Bit24,para;' }: STRUCT     //Status of various features
+   Bit0 : BOOL ;    //0 = Start up with defined initializing in OB100; 1 = keep last stored values
+   Bit1 : BOOL ;    //1 = OosLi can switch to Out of Service
+   Bit2 : BOOL ;    //Reserved
+   Bit3 : BOOL ;    //Reserved
+   Bit4 : BOOL ;    //Reserved
+   Bit5 : BOOL ;    //Reserved
+   Bit6 : BOOL ;    //Reserved
+   Bit7 : BOOL ;    //Reserved
+   Bit8 : BOOL ;    //Reserved
+   Bit9 : BOOL ;    //Reserved
+   Bit10 : BOOL ;    //Reserved
+   Bit11 : BOOL ;    //Reserved
+   Bit12 : BOOL ;    //Reserved
+   Bit13 : BOOL ;    //Reserved
+   Bit14 : BOOL ;    //Reserved
+   Bit15 : BOOL ;    //Reserved
+   Bit16 : BOOL ;    //Reserved
+   Bit17 : BOOL ;    //Reserved
+   Bit18 : BOOL ;    //Reserved
+   Bit19 : BOOL ;    //Reserved
+   Bit20 : BOOL ;    //Reserved
+   Bit21 : BOOL ;    //Reserved
+   Bit22 : BOOL ;    //1 = Enable message state actualization
+   Bit23 : BOOL ;    //Reserved
+   Bit24 : BOOL ;    //1 = Local authorization active
+   Bit25 : BOOL ;    //1 = Suppress all messages if MsgLock = 1
+   Bit26 : BOOL ;    //Reserved
+   Bit27 : BOOL ;    //Reserved
+   Bit28 : BOOL ;    //Reserved
+   Bit29 : BOOL ;    //Reserved
+   Bit30 : BOOL ;    //Reserved
+   Bit31 : BOOL ;    //Reserved
+  END_STRUCT ;   
+END_VAR
+VAR_OUTPUT
+  MS_Release : STRUCT     //1 = MS release
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  Power_Out { S7_dynamic := 'true'; S7_m_c := 'true'; S7_edit := 'para'; S7_xm_c := 'Value,true;'; S7_xqc := 'Value,true;';
+  S7_xshortcut := 'Value,;'; S7_xtrend := 'Value,Power_OpScale.Low,Power_OpScale.High;' }: STRUCT     //Thermal Power [FactPower *kW]
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  Energy_Out { S7_dynamic := 'true'; S7_m_c := 'true'; S7_edit := 'para'; S7_xm_c := 'Value,true;'; S7_xqc := 'Value,true;';
+  S7_xshortcut := 'Value,;' }: STRUCT     //Thermal Energy 1 [FactEnergy *kWh]
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  Energy_OF { S7_dynamic := 'true'; S7_m_c := 'true'; S7_edit := 'para'; S7_xm_c := 'Value,true;'; S7_xqc := 'Value,true;' }: STRUCT     //Overflow of Thermal Energy 1
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  Energy2Out { S7_dynamic := 'true'; S7_m_c := 'true'; S7_edit := 'para'; S7_xm_c := 'Value,true;'; S7_xqc := 'Value,true;';
+  S7_xshortcut := 'Value,;' }: STRUCT     //Thermal Energy 2 [FactEnergy *kWh]
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  Energy2_OF { S7_dynamic := 'true'; S7_m_c := 'true'; S7_edit := 'para'; S7_xm_c := 'Value,true;'; S7_xqc := 'Value,true;' }: STRUCT     //Overflow of Thermal Energy 2
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  Heating { S7_dynamic := 'true' }: STRUCT     //0=cooling mode, 1=heating mode
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  VolFlowRat_Out { S7_dynamic := 'true'; S7_m_c := 'true'; S7_edit := 'para'; S7_xm_c := 'Value,true;'; S7_xqc := 'Value,true;';
+  S7_xshortcut := 'Value,;' }: STRUCT     //Volume Flow Rate [mі/h]
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  TempFor_Out { S7_dynamic := 'true'; S7_m_c := 'true'; S7_edit := 'para'; S7_xm_c := 'Value,true;'; S7_xqc := 'Value,true;';
+  S7_xshortcut := 'Value,;' }: STRUCT     //forerun temperature [°C]
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  TempRet_Out { S7_dynamic := 'true'; S7_m_c := 'true'; S7_edit := 'para'; S7_xm_c := 'Value,true;'; S7_xqc := 'Value,true;';
+  S7_xshortcut := 'Value,;' }: STRUCT     //return temperature  [°C]
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  VolFlowCSF_Out { S7_dynamic := 'true'; S7_m_c := 'true'; S7_xm_c := 'Value,true;' }: STRUCT     //Volume Flow Rate (VolFlowRat) faulty
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  TempForCSF_Out { S7_dynamic := 'true'; S7_m_c := 'true'; S7_xm_c := 'Value,true;' }: STRUCT     //forerun temperature (TempFor) faulty
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  TempRetCSF_Out { S7_dynamic := 'true'; S7_m_c := 'true'; S7_xm_c := 'Value,true;' }: STRUCT     //return temperature  (TempRet) faulty
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  GrErr { S7_dynamic := 'true'; S7_m_c := 'true' }: BOOL ;    //Group Error
+  ExtMsg1Out { S7_visible := 'false' }: STRUCT     //Message input 1 - output
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  ExtMsg2Out { S7_visible := 'false' }: STRUCT     //Message input 2 - output
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  ExtMsg3Out { S7_visible := 'false' }: STRUCT     //Message input 3 - output
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  ExtMsg4Out { S7_visible := 'false' }: STRUCT     //Message input 4 - output
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  SimAct { S7_dynamic := 'true'; S7_m_c := 'true' }: BOOL ;    //1=Simulation active
+  SumMsgAct { S7_dynamic := 'true'; S7_visible := 'false' }: STRUCT     //Summary message active
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  OosAct { S7_dynamic := 'true'; S7_m_c := 'true'; S7_xm_c := 'Value,true;' }: STRUCT     //Out of service is active
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  OnAct { S7_dynamic := 'true' }: STRUCT     //On Mode is active
+   Value : BOOL  := TRUE;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  OS_PermOut { S7_m_c := 'true'; S7_visible := 'false' }: DWORD ;    //Operator Permissions: Output for OS
+  OS_PermOut_ar AT OS_PermOut : ARRAY[0..3] OF BYTE;
+  OS_PermLog { S7_visible := 'true'; S7_m_c := 'true' }: DWORD ;    //Operator Permissions: Output for OS
+  OS_PermLog_b AT OS_PermLog : ARRAY[0..31] OF BOOL ;
+  OS_PermLog_ar AT OS_PermLog : ARRAY[0..3] OF BYTE;
+ 
+  OpSt_Out { S7_visible := 'true'; S7_m_c := 'true' }: DWORD ;    //Enabled operator stations
+  ST_Worst { S7_m_c := 'true'; S7_visible := 'false' }: BYTE ;    //Worst Signal Status
+  Status1 { S7_dynamic := 'true'; S7_m_c := 'true'; S7_visible := 'false' }: DWORD ;    //Status word 1
+  Status1_b AT Status1 : ARRAY[0..31] OF BOOL;
+  Status2 { S7_dynamic := 'true'; S7_m_c := 'true'; S7_visible := 'false' }: DWORD ;    //Status word 2
+  Status2_b AT Status2 : ARRAY[0..31] OF BOOL;
+  MsgErr { S7_visible := 'false'; S7_dynamic := 'false' }: BOOL ;    //Message Error
+  MsgStat { S7_visible := 'false' }: WORD ;    //Message Status
+  MsgAckn { S7_visible := 'false' }: WORD ;    //Message acknowledge
+  MsgSup { S7_m_c := 'true'; S7_dynamic := 'false' }: BOOL ;    //Message suppressed
+  O_MS_Ext : DWORD ;    //Reserved
+END_VAR
+VAR
+  ALARM_8P_1 : "ALARM_8P";   
+  sbFirstStart : BOOL  := TRUE;    //Initial run.
+  siRunUpCounter : INT ;    //Hochlaufzдhler
+  sbMsgLock : BOOL ;    //Meldungen sperren
+  sbVolFlowCSF : BOOL ;    //Externer Fehler VolumendurchfluЯ
+  sbTempForCSF : BOOL ;    //Externer Fehler Vorlauftemperature
+  sbTempRetCSF : BOOL ;    //Externer Fehler Nachlauftemperature
+  sbExtMsg1 : BOOL ;    //Message 1
+  sbExtMsg2 : BOOL ;    //Message 2
+  sbExtMsg3 : BOOL ;    //Message 3
+  sbExtMsg4 : BOOL ;    //Message 4
+  sbMsg1Old : BOOL ;   
+  sbMsg2Old : BOOL ;   
+  sbMsg3Old : BOOL ;   
+  sbMsg4Old : BOOL ;   
+  sbMsg5Old : BOOL ;   
+  sbMsg6Old : BOOL ;   
+  sbMsg7Old : BOOL ;   
+  sbMsg8Old : BOOL ;   
+  sbMsgGroupError : BOOL ;    //Gruppenfehler
+  sbMsgRepeat : BOOL ;   
+  sbOnOp : BOOL ;   
+  sbOnAct : BOOL ;   
+  sbOosOp : BOOL ;   
+  sbOosLi : BOOL ;   
+  sbOosAct : BOOL ;   
+  srU : REAL ;   
+  srOldValue : REAL ;   
+  sdBatchID : DWORD ;    //Batch ID
+  ssBatchName : STRING  [32 ];    //Batch Name
+  ssBatchName_byte AT ssBatchName : STRUCT
+    l : INT;
+    bytes : ARRAY [0..31] OF BYTE;
+  END_STRUCT;
+  sdStepNo : DWORD ;    //Step number
+  siMsgToggle : INT ;   
+  sbFlankeReset : BOOL ;    //Flankenmerker fьr Eingang RESET
+  sbFlankeReset2 : BOOL ;    //Flankenmerker fьr Eingang RESET
+  sbState : BOOL ;    //Status der Meldung
+  liRetVal : INT ;    //Fehler vom SFC Aufruf
+  swOSStatus : WORD ;    //Status-Doppelwort
+  saKV : ARRAY  [1 .. 15, 1 .. 15 ] OF BYTE  := B#16#A4, B#16#A2, B#16#A0, B#16#A0, B#16#A0, B#16#9F, B#16#A0, B#16#A1, B#16#A1, B#16#A2, B#16#A3, B#16#A4, B#16#A6,
+  B#16#A7, B#16#A9, B#16#A0, B#16#9F, B#16#9D, B#16#9D, B#16#9D, B#16#9D, B#16#9E, B#16#9F, B#16#A0, B#16#A1, B#16#A2, B#16#A3, B#16#A5, B#16#A6,
+  B#16#A8, B#16#9C, B#16#9A, B#16#9A, B#16#9A, B#16#9A, B#16#9A, B#16#9C, B#16#9C, B#16#9D, B#16#9E, B#16#9F, B#16#A1, B#16#A2, B#16#A4, B#16#A6, B#16#97,
+  B#16#96, B#16#96, B#16#96, B#16#96, B#16#96, B#16#98, B#16#99, B#16#99, B#16#9B, B#16#9C, B#16#9D, B#16#9F, B#16#A1, B#16#A3, B#16#92, B#16#91, B#16#91,
+  B#16#91, B#16#90, B#16#91, B#16#94, B#16#95, B#16#95, B#16#97, B#16#98, B#16#9A, B#16#9B, B#16#9D, B#16#9F, B#16#8C, B#16#8C, B#16#8C, B#16#8C, B#16#8C,
+  B#16#8E, B#16#91, B#16#91, B#16#91, B#16#92, B#16#94, B#16#95, B#16#97, B#16#99, B#16#9B, B#16#87, B#16#86, B#16#87, B#16#87, B#16#88, B#16#8B, B#16#8D,
+  B#16#8B, B#16#8B, B#16#8C, B#16#8E, B#16#90, B#16#91, B#16#94, B#16#96, B#16#80, B#16#80, B#16#80, B#16#81, B#16#82, B#16#84, B#16#84, B#16#83, B#16#84,
+  B#16#86, B#16#88, B#16#8A, B#16#8C, B#16#8E, B#16#90, B#16#79, B#16#79, B#16#79, B#16#7A, B#16#7B, B#16#7C, B#16#7C, B#16#7C, B#16#7E, B#16#81, B#16#83,
+  B#16#84, B#16#86, B#16#88, B#16#8B, B#16#72, B#16#72, B#16#72, B#16#73, B#16#74, B#16#75, B#16#76, B#16#76, B#16#79, B#16#7C, B#16#7C, B#16#7D, B#16#7F,
+  B#16#82, B#16#84, B#16#6A, B#16#6A, B#16#6B, B#16#6C, B#16#6D, B#16#6E, B#16#6F, B#16#70, B#16#72, B#16#73, B#16#74, B#16#76, B#16#78, B#16#7B, B#16#7E,
+  B#16#62, B#16#62, B#16#63, B#16#64, B#16#65, B#16#66, B#16#67, B#16#68, B#16#6A, B#16#6B, B#16#6C, B#16#6F, B#16#72, B#16#74, B#16#77, B#16#5A, B#16#5A,
+  B#16#5B, B#16#5C, B#16#5D, B#16#5E, B#16#5F, B#16#60, B#16#62, B#16#64, B#16#65, B#16#68, B#16#6B, B#16#6D, B#16#70, B#16#51, B#16#51, B#16#52, B#16#53,
+  B#16#54, B#16#56, B#16#57, B#16#58, B#16#5A, B#16#5C, B#16#5E, B#16#60, B#16#63, B#16#66, B#16#68, B#16#48, B#16#49, B#16#49, B#16#4A, B#16#4B, B#16#4D,
+  B#16#4E, B#16#50, B#16#52, B#16#53, B#16#55, B#16#58, B#16#5B, B#16#5D, B#16#60;   
+  srSTAT_QTH_ENGY : REAL ;    //enthдlt die gesamte abgegebene thermische Energie in der Einheit kWh
+  srSTAT_INT_QTH_ENGY : REAL ;    //interne Zwischensumme, um Genauigkeit zu erhцhen
+  srSTAT_QTH_ENGY2 : REAL ;    //enthдlt die gesamte abgegebene thermische Energie in der Einheit kWh
+  srSTAT_INT_QTH_ENGY2 : REAL ;    //interne Zwischensumme, um Genauigkeit zu erhцhen
+END_VAR
+VAR_TEMP
+  b_upd_alarm : BOOL ;   
+  s_inst : STRUCT    
+   b0 : BYTE ;    //Byte 0
+   b1 : BYTE ;    //Byte 1
+   b2 : BYTE ;    //Byte 2
+   b3 : BYTE ;    //Byte 3
+   b4 : BYTE ;    //Byte 4
+   b5 : BYTE ;    //Byte 5
+   b6 : BYTE ;    //Byte 6
+   b7 : BYTE ;    //Byte 7
+   b8 : BYTE ;    //Byte 8
+   b9 : BYTE ;    //Byte 9
+   b10 : BYTE ;    //Byte 10
+   b11 : BYTE ;    //Byte 11
+   b12 : BYTE ;    //Byte 12
+   b13 : BYTE ;    //Byte 13
+   b14 : BYTE ;    //Byte 14
+   b15 : BYTE ;    //Byte 15
+  END_STRUCT ;   
+  TOP_SI : STRUCT    
+   EV_CLASS : BYTE ;   
+   EV_NUM : BYTE ;   
+   PRIORITY : BYTE ;   
+   NUM : BYTE ;   
+   TYP2_3 : BYTE ;   
+   TYP1 : BYTE ;   
+   ZI1 : WORD ;   
+   ZI2_3 : DWORD ;   
+  END_STRUCT ;   
+  START_UP_SI : STRUCT    
+   EV_CLASS : BYTE ;   
+   EV_NUM : BYTE ;   
+   PRIORITY : BYTE ;   
+   NUM : BYTE ;   
+   TYP2_3 : BYTE ;   
+   TYP1 : BYTE ;   
+   ZI1 : WORD ;   
+   ZI2_3 : DWORD ;   
+  END_STRUCT ;   
+  piRetVal : INT ;   
+  pbTabVMeasF : BOOL ;    //Zeigt an, ob zur Ermittlung des Wдrmekoeffizienten die Tabelle mit der Volumenm
+  prForeTemp : REAL ;    //Vorlauftemperatur zur Ermittlung des  Wдrmekoeffizienten aus der Tabelle
+  prRetTemp : REAL ;    //Rьcklauftemperatur zur Ermittlung des  Wдrmekoeffizienten aus der Tabelle
+  piTempYL : INT ;    //Koordinaten im ARRAY zur Ermittlung der K-Werte
+  piTempXL : INT ;    //----------------------"------------------------
+  prKT : REAL ;    //interpolierter K-Wert fьr die gemessenen
+  prKT_YL_XL : REAL ;    //K-Werte, aus denen der K-Wert fьr die gemessenen Temperaturen interpoliert wird
+  prKT_YL_XH : REAL ;    //------------------------------------"-----------------------------------------
+  prKT_YH_XL : REAL ;    //------------------------------------"-----------------------------------------
+  prKT_YH_XH : REAL ;    //------------------------------------"-----------------------------------------
+  prKT_L : REAL ;    //Zwischenwert beim Interpolieren des K-Werts
+  prKT_H : REAL ;    //---------------------"---------------------
+  prTMP_QTH_POW : REAL ;    //temporдre Variable fьr die thermische Leistung
+  prLAST_V_FL_RT : REAL ;   
+  prLAST_T_FORERN : REAL ;   
+  prLAST_T_RETURN : REAL ;   
+  prExpSumInt : INT ;    //Exponent der int. temp. Zwischensumme
+  prExpQValue : INT ;    //Exponent der Endsumme
+  prdwMask : DWORD ;    //Maske zum Ausmaskieren des nicht zдhlbaren Bereichs
+  prAddQValue : REAL ;    //Zдhlbarer Rest
+  prSumInt : REAL ;    //Aufzusummierender Wert
+  prOVERFLOW_ENGY : BOOL ;    //Ьberlauf des integrierten Werts
+  prOVERFLOW_ENGY2 : BOOL ;    //Ьberlauf des integrierten Werts   
+END_VAR
+BEGIN
+ 
+piRetVal:=RD_SINFO(TOP_SI := TOP_SI // OUT: STRUCT
+         ,START_UP_SI := START_UP_SI // OUT: STRUCT
+         ); // INT
+ 
+b_upd_alarm:=FALSE;
+IF (((TOP_SI.NUM=B#16#64) OR Restart) OR sbFirstStart) THEN //A7d0//
+    sbFirstStart:=FALSE;
+    siRunUpCounter:=RunUpCyc;
+    sbOnAct:=OnAct.Value;
+    sbOosAct:=OosAct.Value;
+    sbOosLi:=OosLi.Value;
+    b_upd_alarm:=TRUE;
+END_IF; //A7d0//
+ 
+IF (FactPower=0.0) THEN //A7d1//
+    FactPower:=1.0;
+END_IF; //A7d1//
+ 
+IF (FactEnergy=0.0) THEN //A7d2//
+    FactEnergy:=1.0;
+END_IF; //A7d2//
+ 
+IF (siRunUpCounter>0) THEN //A7d3//
+    siRunUpCounter:=siRunUpCounter-1;
+    MsgSup:=TRUE;
+    sbMsgLock:=TRUE;
+    sbOnOp:=FALSE;
+    sbOosOp:=FALSE;
+    sbOosLi:=OosLi.Value;
+    srSTAT_QTH_ENGY:=StartEnergy*FactEnergy;
+    srSTAT_QTH_ENGY2:=srSTAT_QTH_ENGY;
+    Energy_Out.Value:=StartEnergy;
+    Energy2Out.Value:=StartEnergy;
+    IF (NOT(Feature.Bit0)) THEN //A7d5//
+        sbVolFlowCSF:=FALSE;
+        sbTempForCSF:=FALSE;
+        sbTempRetCSF:=FALSE;
+        sbMsgGroupError:=FALSE;
+        Status1:=DW#16#0;
+        Status2:=DW#16#0;
+        SumMsgAct.Value:=FALSE;
+    END_IF;
+ELSE //A7d3//
+    OnAct.Value:=NOT(OosAct.Value);
+    IF (Status1=DW#16#0) THEN //A7d6//
+        sbMsgRepeat:=TRUE;
+    END_IF; //A7d6//
+    IF ((((NOT(sbOosOp)) AND OosOp) AND OnAct.Value) AND OS_Perm.Bit3) THEN //A7d7//
+        sbOnAct:=FALSE;
+        sbOosAct:=TRUE;
+    ELSIF (((NOT(sbOosLi)) AND OosLi.Value) AND Feature.Bit1) THEN //A7d9//
+        sbOnAct:=FALSE;
+        sbOosAct:=TRUE;
+    ELSIF ((((NOT(sbOnOp)) AND OnOp) AND OosAct.Value) AND OS_Perm.Bit1) THEN //A7da//
+            sbOnAct:=TRUE;
+            sbOosAct:=FALSE;
+    END_IF; //A7da//
+    OS_PermOut_ar[0]:=OS_Perm_ar[3];
+    OS_PermOut_ar[1]:=OS_Perm_ar[2];
+    OS_PermOut_ar[2]:=OS_Perm_ar[1];
+    OS_PermOut_ar[3]:=OS_Perm_ar[0];
+    IF (sbOnAct) THEN //A7db//
+        OS_PermLog_ar[0]:=OS_Perm_ar[3];
+        OS_PermLog_ar[1]:=OS_Perm_ar[2];
+        OS_PermLog_ar[2]:=OS_Perm_ar[1];
+        OS_PermLog_ar[3]:=OS_Perm_ar[0];
+        OS_PermLog_b[19]:=(NOT SimLiOp.Value) AND OS_Perm.Bit11;
+    ELSIF (sbOosAct) THEN //A7dd//
+        OS_PermLog:=DW#16#0;
+    END_IF; //A7dd//
+    OS_PermLog_b[25]:=(NOT(sbOnAct)) AND OS_Perm.Bit1;
+    OS_PermLog_b[27]:=(NOT(sbOosAct)) AND OS_Perm.Bit3;
+    OS_PermLog_b[20]:=OS_Perm.Bit12;
+    OnAct.Value:=sbOnAct;
+    OosAct.Value:=sbOosAct;
+    sbOnOp:=OnOp;
+    sbOosOp:=OosOp;
+    sbOosLi:=OosLi.Value;
+    OosOp:=FALSE;
+    OnOp:=FALSE;
+    MS_Release.Value:=MS_RelOp;
+    IF (sbOnAct) THEN //A7d5//
+        SimAct:=((NOT(SimLiOp.Value)) AND SimOn) OR ((SimOnLi.Value) AND SimLiOp.Value);
+        sbMsgLock:=MsgLock.Value;
+        sbVolFlowCSF:=VolFlowCSF.Value;
+        sbTempForCSF:=TempForCSF.Value;
+        sbTempRetCSF:=TempRetCSF.Value;
+        sbExtMsg1:=ExtMsg1.Value;
+        sbExtMsg2:=ExtMsg2.Value;
+        sbExtMsg3:=ExtMsg3.Value;
+        sbExtMsg4:=ExtMsg4.Value;
+        IF ((RstEnergyLi.Value) OR RstEnergyOp) THEN //A7df//
+            IF (NOT(sbFlankeReset)) THEN //A7e1//
+                srSTAT_QTH_ENGY:=0.0;
+                srSTAT_INT_QTH_ENGY:=0.0;
+                sbFlankeReset:=TRUE;
+                RstEnergyOp:=FALSE;
+                Energy_OF.Value:=FALSE;
+            END_IF;   
+        ELSE //A7df//
+            sbFlankeReset:=FALSE;
+        END_IF; //A7e1//
+        IF ((RstEnergy2Li.Value) OR RstEnergy2Op) THEN //A7e2//
+            IF (NOT(sbFlankeReset2)) THEN //A7e4//
+                srSTAT_QTH_ENGY2:=0.0;
+                srSTAT_INT_QTH_ENGY2:=0.0;
+                sbFlankeReset2:=TRUE;
+                RstEnergy2Op:=FALSE;
+                Energy2_OF.Value:=FALSE;
+            END_IF;   
+        ELSE //A7e2//
+            sbFlankeReset2:=FALSE;
+        END_IF; //A7e4//
+        IF (SimAct) THEN //A7e5//
+            IF ((SimOnLi.Value) AND SimLiOp.Value) THEN //A7e6//
+                prLAST_V_FL_RT:=SimVolFlowRat_Li.Value;
+                prLAST_T_FORERN:=SimTempFor_Li.Value;
+                prLAST_T_RETURN:=SimTempRet_Li.Value;
+            ELSE //A7e6//
+                prLAST_V_FL_RT:=SimVolFlowRat;
+                prLAST_T_FORERN:=SimTempFor;
+                prLAST_T_RETURN:=SimTempRet;
+            END_IF; //A7e7//
+            IF (SimLiOp.Value) THEN //A7e9//
+                SimVolFlowRat:=SimVolFlowRat_Li.Value;
+                SimTempFor:=SimTempFor_Li.Value;
+                SimTempRet:=SimTempRet_Li.Value;
+            END_IF;
+        ELSE //A7e5//
+            prLAST_V_FL_RT:=VolFlowRat.Value;
+            prLAST_T_FORERN:=TempFor.Value;
+            prLAST_T_RETURN:=TempRet.Value;
+        END_IF; //A7e9//
+        IF (prLAST_T_FORERN>=prLAST_T_RETURN) THEN //A7ea//
+            prForeTemp:=prLAST_T_FORERN;
+            prRetTemp:=prLAST_T_RETURN;
+            pbTabVMeasF:=VolMeasFor;
+        ELSE //A7ea//
+            prForeTemp:=prLAST_T_RETURN;
+            prRetTemp:=prLAST_T_FORERN;
+            pbTabVMeasF:=NOT(VolMeasFor);
+        END_IF; //A7eb//
+        IF (pbTabVMeasF) THEN //A7ec//
+            piTempYL:=DINT_TO_INT(ROUND(DINT_TO_REAL(TRUNC(prForeTemp/1.000000e+001))));
+            piTempXL:=DINT_TO_INT(ROUND(DINT_TO_REAL(TRUNC(prRetTemp/1.000000e+001))));
+        ELSE //A7ec//
+            piTempYL:=DINT_TO_INT(ROUND(DINT_TO_REAL(TRUNC(prRetTemp/1.000000e+001))));
+            piTempXL:=DINT_TO_INT(ROUND(DINT_TO_REAL(TRUNC(prForeTemp/1.000000e+001))));
+        END_IF; //A7ed//
+        IF (piTempXL<1) THEN //A7ee//
+            piTempXL:=1;
+        END_IF; //A7ee//
+        IF (piTempYL<1) THEN //A7ef//
+            piTempYL:=1;
+        END_IF; //A7ef//
+        IF (piTempXL>14) THEN //A7f0//
+            piTempXL:=14;
+        END_IF; //A7f0//
+        IF (piTempYL>14) THEN //A7f1//
+            piTempYL:=14;
+        END_IF; //A7f1//
+       
+        prKT_YL_XL:=INT_TO_REAL(BYTE_TO_INT(saKV[piTempYL,piTempXL]));
+        prKT_YL_XH:=INT_TO_REAL(BYTE_TO_INT(saKV[piTempYL,piTempXL+1]));
+        prKT_YH_XL:=INT_TO_REAL(BYTE_TO_INT(saKV[piTempYL+1,piTempXL]));
+        prKT_YH_XH:=INT_TO_REAL(BYTE_TO_INT(saKV[piTempYL+1,piTempXL+1]));
+        prKT_YL_XL:=(prKT_YL_XL/1.000000e+003)+1.0;
+        prKT_YL_XH:=(prKT_YL_XH/1.000000e+003)+1.0;
+        prKT_YH_XL:=(prKT_YH_XL/1.000000e+003)+1.0;
+        prKT_YH_XH:=(prKT_YH_XH/1.000000e+003)+1.0;
+        IF (pbTabVMeasF) THEN //A7f2//
+            prKT_L:=(((prKT_YH_XL-prKT_YL_XL)*(prForeTemp-DINT_TO_REAL(INT_TO_DINT(10*piTempYL))))/1.000000e+001)+prKT_YL_XL;
+            prKT_H:=(((prKT_YH_XH-prKT_YL_XH)*(prForeTemp-DINT_TO_REAL(INT_TO_DINT(10*piTempYL))))/1.000000e+001)+prKT_YL_XH;
+            prKT:=(((prKT_H-prKT_L)/1.000000e+001)*(prRetTemp-DINT_TO_REAL(INT_TO_DINT(10*piTempXL))))+prKT_L;
+        ELSE //A7f2//
+            prKT_L:=(((prKT_YH_XL-prKT_YL_XL)*(prRetTemp-DINT_TO_REAL(INT_TO_DINT(10*piTempYL))))/1.000000e+001)+prKT_YL_XL;
+            prKT_H:=(((prKT_YH_XH-prKT_YL_XH)*(prRetTemp-DINT_TO_REAL(INT_TO_DINT(10*piTempYL))))/1.000000e+001)+prKT_YL_XH;
+            prKT:=(((prKT_H-prKT_L)*(prForeTemp-DINT_TO_REAL(INT_TO_DINT(10*piTempXL))))/1.000000e+001)+prKT_L;
+        END_IF; //A7f3//
+        prTMP_QTH_POW:=((prLAST_V_FL_RT*prKT)*(prLAST_T_FORERN-prLAST_T_RETURN))/FactPower;
+        IF (ABS(prTMP_QTH_POW)<MinPower) THEN //A7f4//
+            prTMP_QTH_POW:=0.0;
+            Power_Out.Value:=0.0;
+        ELSE //A7f4//
+            Power_Out.Value:=ABS(prTMP_QTH_POW);
+        END_IF; //A7f5//
+        IF (prLAST_T_FORERN>=prLAST_T_RETURN) THEN //A7f6//
+            Heating.Value:=TRUE;
+        ELSE //A7f6//
+            Heating.Value:=FALSE;
+        END_IF; //A7f7//
+        prSumInt:=(((prTMP_QTH_POW*FactPower)*SampleTime)/3.600000e+003)+srSTAT_INT_QTH_ENGY;
+        prExpSumInt:=DWORD_TO_INT(SHR(IN:=(REAL_TO_DWORD(prSumInt) AND DW#16#7FFFFFFF),N:=23));
+        prExpQValue:=DWORD_TO_INT(SHR(IN:=(REAL_TO_DWORD(srSTAT_QTH_ENGY) AND DW#16#7FFFFFFF),N:=23));
+        prAddQValue:=prSumInt;
+        IF (prExpQValue>prExpSumInt) THEN //A7f8//
+            IF (prExpQValue<(prExpSumInt+23)) THEN //A7f9//
+                prdwMask:=SHL(IN:=DW#16#FFFFFFFF,N:=(prExpQValue-prExpSumInt));
+                prAddQValue:=DWORD_TO_REAL(REAL_TO_DWORD(prSumInt) AND prdwMask);
+                srSTAT_INT_QTH_ENGY:=prSumInt-prAddQValue;
+            ELSE //A7f9//
+                prAddQValue:=0.0;
+                srSTAT_INT_QTH_ENGY:=prSumInt;
+            END_IF;               
+        ELSE //A7f8//
+            srSTAT_INT_QTH_ENGY:=0.0;
+        END_IF; //A7fb//
+        IF (prAddQValue>0.0) THEN //A7fc//
+            IF ((srSTAT_QTH_ENGY>0.0) AND (prAddQValue>=(3.402822e+038-srSTAT_QTH_ENGY))) THEN //A7fd//
+                prOVERFLOW_ENGY:=TRUE;
+                srSTAT_QTH_ENGY:=3.402822e+038;
+            ELSE //A7fd//
+                prOVERFLOW_ENGY:=FALSE;
+                srSTAT_QTH_ENGY:=srSTAT_QTH_ENGY+prAddQValue;
+            END_IF;               
+        ELSIF (prAddQValue<0.0) THEN //A800//
+            IF ((srSTAT_QTH_ENGY<0.0) AND (prAddQValue<=(-3.402822e+038-srSTAT_QTH_ENGY))) THEN //A801//
+                prOVERFLOW_ENGY:=TRUE;
+                srSTAT_QTH_ENGY:=-3.402822e+038;
+            ELSE //A801//
+                prOVERFLOW_ENGY:=FALSE;
+                srSTAT_QTH_ENGY:=srSTAT_QTH_ENGY+prAddQValue;
+            END_IF;
+        END_IF; //A800//
+        Energy_Out.Value:=(srSTAT_QTH_ENGY+srSTAT_INT_QTH_ENGY)/FactEnergy;
+        Energy_OF.Value:=prOVERFLOW_ENGY;
+        prSumInt:=(((prTMP_QTH_POW*FactPower)*SampleTime)/3.600000e+003)+srSTAT_INT_QTH_ENGY2;
+        prExpSumInt:=DWORD_TO_INT(SHR(IN:=REAL_TO_DWORD(prSumInt) AND DW#16#7FFFFFFF,N:=23));
+        prExpQValue:=DWORD_TO_INT(SHR(IN:=REAL_TO_DWORD(srSTAT_QTH_ENGY2) AND DW#16#7FFFFFFF,N:=23));
+        prAddQValue:=prSumInt;
+        IF (prExpQValue>prExpSumInt) THEN //A803//
+            IF (prExpQValue<(prExpSumInt+23)) THEN //A804//
+                prdwMask:=SHL(IN:=DW#16#FFFFFFFF,N:=(prExpQValue-prExpSumInt));
+                prAddQValue:=DWORD_TO_REAL(REAL_TO_DWORD(prSumInt) AND prdwMask);
+                srSTAT_INT_QTH_ENGY2:=prSumInt-prAddQValue;
+            ELSE //A804//
+                prAddQValue:=0.0;
+                srSTAT_INT_QTH_ENGY2:=prSumInt;
+            END_IF;               
+        ELSE //A803//
+            srSTAT_INT_QTH_ENGY2:=0.0;
+        END_IF; //A806//
+        IF (prAddQValue>0.0) THEN //A807//
+            IF ((srSTAT_QTH_ENGY2>0.0) AND (prAddQValue>=(3.402822e+038-srSTAT_QTH_ENGY2))) THEN //A808//
+                prOVERFLOW_ENGY2:=TRUE;
+                srSTAT_QTH_ENGY2:=3.402822e+038;
+            ELSE //A808//
+                prOVERFLOW_ENGY2:=FALSE;
+                srSTAT_QTH_ENGY2:=srSTAT_QTH_ENGY2+prAddQValue;
+            END_IF;                   
+        ELSIF (prAddQValue<0.0) THEN //A80b//
+            IF ((srSTAT_QTH_ENGY2<0.0) AND (prAddQValue<=(-3.402822e+038-srSTAT_QTH_ENGY2))) THEN //A80c//
+                prOVERFLOW_ENGY2:=TRUE;
+                srSTAT_QTH_ENGY2:=-3.402822e+038;
+            ELSE //A80c//
+                prOVERFLOW_ENGY2:=FALSE;
+                srSTAT_QTH_ENGY2:=srSTAT_QTH_ENGY2+prAddQValue;
+            END_IF;
+        END_IF; //A80b//
+       
+        Energy2Out.Value:=(srSTAT_QTH_ENGY2+srSTAT_INT_QTH_ENGY2)/FactEnergy;
+        Energy2_OF.Value:=prOVERFLOW_ENGY2;
+        s_inst.b0:=TempFor.ST;
+        s_inst.b1:=TempRet.ST;
+        s_inst.b2:=VolFlowRat.ST;
+       
+        ST_Worst:=SelST16(InST := s_inst // IN: STRUCT
+                ,Num := 3 // IN: INT
+                ,SelPrio := 0 // IN: INT
+                ); // BYTE
+       
+        sbMsgGroupError:=((((((sbVolFlowCSF) OR sbTempForCSF) OR sbTempRetCSF) OR sbExtMsg1) OR sbExtMsg2) OR sbExtMsg3) OR sbExtMsg4;
+        SumMsgAct.Value:=((((((sbVolFlowCSF) OR sbTempForCSF) OR sbTempRetCSF) OR sbExtMsg1) OR sbExtMsg2) OR sbExtMsg3) OR sbExtMsg4;
+    END_IF;
+END_IF; //A7d5//
+ 
+b_upd_alarm:=
+               (((((((sbMsg1Old <> (((NOT(sbMsgLock AND Feature.Bit25)) AND sbTempForCSF) AND (NOT sbOosAct))) OR b_upd_alarm)
+                OR   (sbMsg2Old <> (((NOT(sbMsgLock AND Feature.Bit25)) AND sbTempRetCSF) AND (NOT sbOosAct)))  
+                OR   (sbMsg3Old <> (((NOT(sbMsgLock AND Feature.Bit25)) AND sbVolFlowCSF) AND (NOT sbOosAct))
+             )) OR  ((sbMsg4Old <> ((NOT sbMsgLock) AND SimAct)) AND (NOT sbOosAct)
+             )) OR   (sbMsg5Old <> (((NOT(sbMsgLock AND Feature.Bit25)) AND sbExtMsg1) AND (NOT sbOosAct))
+             )) OR   (sbMsg6Old <> (((NOT(sbMsgLock AND Feature.Bit25)) AND sbExtMsg2) AND (NOT sbOosAct))
+             )) OR   (sbMsg7Old <> (((NOT(sbMsgLock AND Feature.Bit25)) AND sbExtMsg3) AND (NOT sbOosAct))
+             )) OR   (sbMsg8Old <> (((NOT(sbMsgLock AND Feature.Bit25)) AND sbExtMsg4) AND (NOT sbOosAct))
+         );
+ 
+sbMsg1Old:=((NOT((sbMsgLock) AND Feature.Bit25)) AND sbTempForCSF) AND (NOT(sbOosAct));
+sbMsg2Old:=((NOT((sbMsgLock) AND Feature.Bit25)) AND sbTempRetCSF) AND (NOT(sbOosAct));
+sbMsg3Old:=((NOT((sbMsgLock) AND Feature.Bit25)) AND sbVolFlowCSF) AND (NOT(sbOosAct));
+sbMsg4Old:=((NOT(sbMsgLock)) AND SimAct) AND (NOT(sbOosAct));
+sbMsg5Old:=((NOT((sbMsgLock) AND Feature.Bit25)) AND sbExtMsg1) AND (NOT(sbOosAct));
+sbMsg6Old:=((NOT((sbMsgLock) AND Feature.Bit25)) AND sbExtMsg2) AND (NOT(sbOosAct));
+sbMsg7Old:=((NOT((sbMsgLock) AND Feature.Bit25)) AND sbExtMsg3) AND (NOT(sbOosAct));
+sbMsg8Old:=((NOT((sbMsgLock) AND Feature.Bit25)) AND sbExtMsg4) AND (NOT(sbOosAct));
+ 
+IF (Feature.Bit22) THEN //A80e//
+    IF (siMsgToggle>=1) THEN //A80f//
+        siMsgToggle:=0;
+        IF ((MsgAckn AND W#16#FF)<>W#16#FF) THEN //A80e//
+            b_upd_alarm:=TRUE;
+        END_IF;       
+    ELSE //A80f//
+        siMsgToggle:=1;
+    END_IF;
+END_IF; //A80e//
+ 
+IF ((b_upd_alarm) OR sbMsgRepeat) THEN //A812//
+ 
+    ALARM_8P_1(EN_R := TRUE // IN: BOOL
+               ,ID := W#16#EEEE // IN: WORD
+               ,EV_ID := MsgEvId // IN: DWORD
+               ,SIG_1 := ((NOT((sbMsgLock) AND Feature.Bit25)) AND sbTempForCSF) AND (NOT(sbOosAct)) // IN: BOOL
+               ,SIG_2 := ((NOT((sbMsgLock) AND Feature.Bit25)) AND sbTempRetCSF) AND (NOT(sbOosAct)) // IN: BOOL
+               ,SIG_3 := ((NOT((sbMsgLock) AND Feature.Bit25)) AND sbVolFlowCSF) AND (NOT(sbOosAct)) // IN: BOOL
+               ,SIG_4 := ((NOT(sbMsgLock)) AND SimAct) AND (NOT(sbOosAct)) // IN: BOOL
+               ,SIG_5 := ((NOT((sbMsgLock) AND Feature.Bit25)) AND sbExtMsg1) AND (NOT(sbOosAct)) // IN: BOOL
+               ,SIG_6 := ((NOT((sbMsgLock) AND Feature.Bit25)) AND sbExtMsg2) AND (NOT(sbOosAct)) // IN: BOOL
+               ,SIG_7 := ((NOT((sbMsgLock) AND Feature.Bit25)) AND sbExtMsg3) AND (NOT(sbOosAct)) // IN: BOOL
+               ,SIG_8 := ((NOT((sbMsgLock) AND Feature.Bit25)) AND sbExtMsg4) AND (NOT(sbOosAct)) // IN: BOOL
+               ,SD_1 := ssBatchName_byte.bytes // INOUT: ANY
+               ,SD_2 := sdStepNo // INOUT: ANY
+               ,SD_3 := sdBatchID // INOUT: ANY
+               ,SD_4 := ExtVal04 // INOUT: ANY
+               ,SD_5 := ExtVal05 // INOUT: ANY
+               ,SD_6 := ExtVal06 // INOUT: ANY
+               ,SD_7 := ExtVal07 // INOUT: ANY
+               ,SD_8 := ExtVal08  // INOUT: ANY
+               ,SD_9 := ExtVal09 // INOUT: ANY
+               ,SD_10 := ExtVal10 // INOUT: ANY
+               );
+ 
+     sbMsgRepeat:=ALARM_8P_1.STATUS=W#16#14;
+   
+    IF (Feature.Bit22) THEN //A813//
+        MsgErr:=ALARM_8P_1.ERROR;
+        MsgStat:=ALARM_8P_1.STATUS;
+        MsgAckn:=ALARM_8P_1.ACK_STATE;
+    ELSE //A813//
+        MsgErr:=FALSE;
+        MsgStat:=W#16#0;
+        MsgAckn:=W#16#0;
+    END_IF;
+END_IF; //A812//
+ 
+ 
+MsgSup:=(MsgStat=W#16#15) OR sbMsgLock;
+IF (SimAct) THEN //A815//
+    Power_Out.ST:=B#16#60;
+    Energy_Out.ST:=B#16#60;
+    Energy2Out.ST:=B#16#60;
+    Heating.ST:=B#16#60;
+    VolFlowRat_Out.ST:=B#16#60;
+    TempFor_Out.ST:=B#16#60;
+    TempRet_Out.ST:=B#16#60;
+    ST_Worst:=B#16#60;
+    TempFor_Out.Value:=prLAST_T_FORERN;
+    TempRet_Out.Value:=prLAST_T_RETURN;
+    VolFlowRat_Out.Value:=prLAST_V_FL_RT;
+ELSE //A815//
+    Power_Out.ST:=ST_Worst;
+    Energy_Out.ST:=ST_Worst;
+    Energy2Out.ST:=ST_Worst;
+    Heating.ST:=ST_Worst;
+    VolFlowRat_Out.ST:=VolFlowRat.ST;
+    TempFor_Out.ST:=TempFor.ST;
+    TempRet_Out.ST:=TempRet.ST;
+    TempFor_Out.Value:=TempFor.Value;
+    TempRet_Out.Value:=TempRet.Value;
+    VolFlowRat_Out.Value:=VolFlowRat.Value;
+    SimTempFor:=TempFor_Out.Value;
+    SimTempRet:=TempRet_Out.Value;
+    SimVolFlowRat:=VolFlowRat_Out.Value;
+END_IF; //A816//
+ 
+IF (SimLiOp.Value) THEN //A817//
+    SimOn:=SimOnLi.Value;
+END_IF; //A817//
+ 
+VolFlowCSF_Out.Value:=sbVolFlowCSF;
+TempForCSF_Out.Value:=sbTempForCSF;
+TempRetCSF_Out.Value:=sbTempRetCSF;
+ExtMsg1Out.Value:=sbExtMsg1;
+ExtMsg2Out.Value:=sbExtMsg2;
+ExtMsg3Out.Value:=sbExtMsg3;
+ExtMsg4Out.Value:=sbExtMsg4;
+GrErr:=sbMsgGroupError;
+Status1_b[27]:=OosAct.Value;
+Status1_b[30]:=OnAct.Value;
+Status1_b[28]:=OosLi.Value;
+Status2_b[7]:=MS_RelOp;
+ 
+IF (NOT(OosAct.Value)) THEN //A818//
+    Status1_b[24]:=Occupied;
+    Status1_b[25]:=BatchEn;
+    Status1_b[26]:=SimAct;
+    Status1_b[20]:=SimLiOp.Value;
+    Status1_b[6]:=NOT(UserAna1.ST=B#16#FF);
+    Status1_b[7]:=NOT(UserAna2.ST=B#16#FF);
+    Status1_b[16]:=VolMeasFor;
+    Status1_b[17]:=NOT(VolMeasFor);
+    Status1_b[18]:=Heating.Value;
+    Status1_b[19]:=NOT(Heating.Value);
+    Status2_b[24]:=MsgLock.Value;
+    Status2_b[25]:=sbTempForCSF;
+    Status2_b[26]:=sbTempRetCSF;
+    Status2_b[27]:=sbVolFlowCSF;
+END_IF; //A818//
+IF (Feature.Bit24) THEN //A819//
+    OpSt_Out:=OpSt_In OR DW#16#80000000;
+ELSE //A819//
+    OpSt_Out:=OpSt_In AND DW#16#7FFFFFFF;
+END_IF; //A81a//
+ 
+END_FUNCTION_BLOCK
