@@ -1,0 +1,706 @@
+{
+Scl_ResetOptions ;
+Scl_OverwriteBlocks:=           'y' ;
+Scl_GenerateReferenceData :=    'y' ;
+Scl_S7ServerActive:=            'n' ;
+Scl_CreateObjectCode:=          'y' ;
+Scl_OptimizeObjectCode:=        'y' ;
+Scl_MonitorArrayLimits:=        'n' ;
+Scl_CreateDebugInfo :=          'y' ;
+Scl_SetOKFlag:=                 'n' ;
+Scl_SetMaximumStringLength:=    '254'
+}
+ 
+//===================
+ 
+ 
+FUNCTION_BLOCK FB11147 //"HxFct"
+TITLE ='HxFct Enthalpy, absolute humidity and humidity at saturation of'
+{ S7_m_c := 'true'; S7_alarm_ui := '1'; S7_language := '9(1) English (United States)  19.02.2014  16:04:02'; S7_tasklist := 'OB100' }
+AUTHOR : AdvLibIL
+FAMILY : HVAC
+NAME : HxFct
+VERSION : '5.1'
+ 
+ 
+VAR_INPUT
+  Restart { S7_visible := 'false'; S7_dynamic := 'true' }: BOOL ;    //Manual Restart
+  MS_RelOp { Op_Level := '3'; S7_m_c := 'true'; S7_visible := 'true' }: BOOL ;    //Operator input for MS Release, 1:MS release requirement
+  OnOp { Op_Level := '1'; S7_m_c := 'true'; S7_visible := 'false' }: BOOL ;    //1=On Mode: On Mode by Operator
+  OosOp { Op_Level := '2'; S7_m_c := 'true'; S7_visible := 'false' }: BOOL ;    //1=Oos Mode: Oos Mode by Operator
+  OosLi { S7_dynamic := 'true' }: STRUCT     //1=Oos Mode: Oos Mode by Field Signal                 
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  UserAna1 { S7_m_c := 'true'; S7_visible := 'false'; S7_xm_c := 'Value,true;'; S7_xqc := 'Value,true;'; S7_xshortcut := 'Value,;' }: STRUCT     //User Analog Input 1
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#FF;    //Signal Status
+  END_STRUCT ;   
+  UA1unit { S7_m_c := 'true'; S7_unit := ''; S7_visible := 'false' }: INT ;    //Unit of UserAna1
+  UserAna2 { S7_m_c := 'true'; S7_visible := 'false'; S7_xm_c := 'Value,true;'; S7_xqc := 'Value,true;'; S7_xshortcut := 'Value,;' }: STRUCT     //User Analog Input 2
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#FF;    //Signal Status
+  END_STRUCT ;   
+  UA2unit { S7_m_c := 'true'; S7_unit := ''; S7_visible := 'false' }: INT ;    //Unit of UserAna2
+  SampleTime { S7_visible := 'false'; S7_link := 'false'; S7_sampletime := 'true'; S7_param := 'false' }: REAL  := 1.000000e-001;    //Sample time  [s]
+  Temp { S7_dynamic := 'true'; S7_m_c := 'true'; S7_edit := 'para'; S7_xm_c := 'Value,true;'; S7_xqc := 'Value,true;'; S7_xshortcut := 'Value,;'; S7_xtrend := 'Value,Temp_OpScale.Low,Temp_OpScale.High;' }: STRUCT     //temperature [°C]
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  Temp_OpScale { S7_edit := 'para'; S7_m_c := 'true'; S7_xedit := 'High,para;Low,para;'; S7_xm_c := 'High,true;Low,true;' }: STRUCT     //Temp Trend Display Limits for OS
+   High : REAL  := 5.000000e+001;    //High Value
+   Low : REAL ;    //Low Value
+  END_STRUCT ;   
+  Temp_Unit { S7_m_c := 'true'; S7_unit := '°C'; S7_edit := 'para' }: INT  := 1001;    //Unit of Temp
+  RelHum { S7_dynamic := 'true'; S7_m_c := 'true'; S7_edit := 'para'; S7_xm_c := 'Value,true;'; S7_xqc := 'Value,true;'; S7_xshortcut := 'Value,;'; S7_xtrend := 'Value,RelHum_OpScale.Low,RelHum_OpScale.High;' }: STRUCT     //relative humidity  [%]
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  RelHum_OpScale { S7_edit := 'para'; S7_m_c := 'true'; S7_xedit := 'High,para;Low,para;'; S7_xm_c := 'High,true;Low,true;' }: STRUCT     //RelHum Trend Display Limits for OS
+   High : REAL  := 1.000000e+002;    //High Value
+   Low : REAL ;    //Low Value
+  END_STRUCT ;   
+  RelHum_Unit { S7_m_c := 'true'; S7_unit := '%'; S7_edit := 'para' }: INT  := 1342;    //Unit of RelHum
+  TempCSF : STRUCT     //temperature (Temp) faulty
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  RelHumCSF : STRUCT     //relative humidity  (RelHum) faulty
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  Enthalpy_OpScale { S7_edit := 'para'; S7_m_c := 'true'; S7_xedit := 'High,para;Low,para;'; S7_xm_c := 'High,true;Low,true;' }: STRUCT     //Enthalpy Trend Display Limits for OS
+   High : REAL  := 2.000000e+002;    //High Value
+   Low : REAL ;    //Low Value
+  END_STRUCT ;   
+  Enthalpy_Unit { S7_m_c := 'true'; S7_unit := 'kJ/kg'; S7_edit := 'para' }: INT  := 1208;    //Unit of Enthalpy_Out
+  AbsHum_OpScale { S7_edit := 'para'; S7_m_c := 'true'; S7_xedit := 'High,para;Low,para;'; S7_xm_c := 'High,true;Low,true;' }: STRUCT     //AbsHum Trend Display Limits for OS
+   High : REAL  := 6.500000e+001;    //High Value
+   Low : REAL ;    //Low Value
+  END_STRUCT ;   
+  AbsHum_Unit { S7_m_c := 'true'; S7_unit := 'g/kg'; S7_edit := 'para' }: INT ;    //Unit of AbsHum_Out
+  SatHum_OpScale { S7_edit := 'para'; S7_m_c := 'true'; S7_xedit := 'High,para;Low,para;'; S7_xm_c := 'High,true;Low,true;' }: STRUCT     //SatHum Trend Display Limits for OS
+   High : REAL  := 6.500000e+001;    //High Value
+   Low : REAL ;    //Low Value
+  END_STRUCT ;   
+  SatHum_Unit { S7_m_c := 'true'; S7_unit := 'g/kg'; S7_edit := 'para' }: INT ;    //Unit of SatHum_Out
+  AtmPress { S7_edit := 'para'; S7_visible := 'false'; S7_m_c := 'true' }: REAL  := 1.013000e+003;    //Atmospheric pressure for calculating saturation humidity [mbar] [hPa]
+  AtmPress_Unit { S7_m_c := 'true'; S7_unit := 'hPa'; S7_edit := 'para'; S7_visible := 'false' }: INT  := 1136;    //Unit of atmospheric pressure          
+  C1NegTemp { S7_edit := 'para'; S7_visible := 'false' }: REAL  := 2.244330e+001;    //C1 constant in case of negative temperature
+  C2NegTemp { S7_edit := 'para'; S7_visible := 'false' }: REAL  := 2.721860e+002;    //C2 constant in case of negative temperature
+  C1PosTemp { S7_edit := 'para'; S7_visible := 'false' }: REAL  := 1.750430e+001;    //C1 constant in case of positive temperature
+  C2PosTemp { S7_edit := 'para'; S7_visible := 'false' }: REAL  := 2.411750e+002;    //C2 constant in case of positive temperature
+  _C3 { S7_edit := 'para'; S7_visible := 'false' }: REAL  := 6.112130e+002;    //C3 constant
+  MsgLock { S7_visible := 'false' }: STRUCT     //Messages locked
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  ExtMsg1 { S7_visible := 'false' }: STRUCT     //External Message 1
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  ExtMsg2 { S7_visible := 'false' }: STRUCT     //External Message 2
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  ExtMsg3 { S7_visible := 'false' }: STRUCT     //External Message 3
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  ExtMsg4 { S7_visible := 'false' }: STRUCT     //External Message 4
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  ExtMsg5 { S7_visible := 'false' }: STRUCT     //External Message 5
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  ExtVal04 { S7_visible := 'false' }: ANY ;    //External Value 4
+  ExtVal05 { S7_visible := 'false' }: ANY ;    //External Value 5
+  ExtVal06 { S7_visible := 'false' }: ANY ;    //External Value 6
+  ExtVal07 { S7_visible := 'false' }: ANY ;    //External Value 7
+  ExtVal08 { S7_visible := 'false' }: ANY ;    //External Value 8
+  ExtVal09 { S7_visible := 'false' }: ANY ;    //External Value 9
+  ExtVal10 { S7_visible := 'false' }: ANY ;    //External Value 10
+  SimLiOp { S7_visible := 'false' }: STRUCT     //Simulation on/off via 0 = Operator, 1 = Interconnection or SFC
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  SimOnLi { S7_visible := 'false' }: STRUCT     //1 = Simulation activated by interconnection or SFC (controlled by SimLiOp = 1)
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  SimOn { Op_Level := '3'; S7_visible := 'false'; S7_m_c := 'true' }: BOOL ;    //Simulation On/Off
+  SimTemp { Op_Level := '1'; S7_visible := 'false'; S7_m_c := 'true' }: REAL ;    //Simulation Temp
+  SimTemp_Li { S7_visible := 'false' }: STRUCT     //Linkable simulation value Temp                   
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  SimRelHum { Op_Level := '1'; S7_visible := 'false'; S7_m_c := 'true' }: REAL ;    //Simulation RelHum
+  SimRelHum_Li { S7_visible := 'false' }: STRUCT     //Linkable simulation value RelHum
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  MsgEvId { S7_visible := 'false'; S7_link := 'false'; S7_param := 'false'; S7_server := 'alarm_archiv'; S7_a_type := 'alarm_8p' }: DWORD ;    //Message ID
+  RunUpCyc { S7_visible := 'false' }: INT  := 10;    //Lag: Number of Run Up Cycles
+  BatchEn { S7_visible := 'false' }: BOOL ;    //Enable Remote Operation of Controller by Batch Receipe                        
+  BatchID { S7_visible := 'false'; S7_m_c := 'true' }: DWORD ;    //Current Batch ID (number)
+  BatchName { S7_visible := 'false'; S7_m_c := 'true' }: STRING  [32 ];    //Current Batch Name
+  StepNo { S7_visible := 'false'; S7_m_c := 'true' }: DWORD ;    //Batch Step Number
+  Occupied { S7_visible := 'false' }: BOOL ;    //Occupied by Batch
+  UserStatus { S7_visible := 'false'; S7_m_c := 'true' }: BYTE ;    //User Status Bits
+  SelFp1 { S7_visible := 'false'; BLK_Jump := '1' }: ANY ;    //Select Faceplate 1
+  SelFp2 { S7_visible := 'false'; BLK_Jump := '1' }: ANY ;    //Select Faceplate 2
+  OS_Perm { S7_visible := 'false' }: STRUCT     //Operator Permissions
+   Bit0 : BOOL  := TRUE;    //Reserved
+   Bit1 : BOOL  := TRUE;    //1 = Operator can switch to On
+   Bit2 : BOOL  := TRUE;    //Reserved
+   Bit3 : BOOL  := TRUE;    //1 = Operator can switch to OOS
+   Bit4 : BOOL  := TRUE;    //Reserved
+   Bit5 : BOOL  := TRUE;    //Reserved
+   Bit6 : BOOL  := TRUE;    //Reserved
+   Bit7 : BOOL  := TRUE;    //1 = Operator can reset accumulated values
+   Bit8 : BOOL  := TRUE;    //Reserved
+   Bit9 : BOOL  := TRUE;    //Reserved
+   Bit10 : BOOL  := TRUE;    //Reserved
+   Bit11 : BOOL  := TRUE;    //1 = Operator can enable function simulation
+   Bit12 : BOOL  := TRUE;    //1 = Operator can enable function maintenance release
+   Bit13 : BOOL  := TRUE;    //Reserved
+   Bit14 : BOOL  := TRUE;    //Reserved
+   Bit15 : BOOL  := TRUE;    //Reserved
+   Bit16 : BOOL  := TRUE;    //Reserved
+   Bit17 : BOOL  := TRUE;    //Reserved
+   Bit18 : BOOL  := TRUE;    //Reserved
+   Bit19 : BOOL  := TRUE;    //Reserved
+   Bit20 : BOOL  := TRUE;    //Reserved
+   Bit21 : BOOL  := TRUE;    //Reserved
+   Bit22 : BOOL  := TRUE;    //Reserved
+   Bit23 : BOOL  := TRUE;    //Reserved
+   Bit24 : BOOL  := TRUE;    //Reserved
+   Bit25 : BOOL  := TRUE;    //Reserved
+   Bit26 : BOOL  := TRUE;    //Reserved
+   Bit27 : BOOL  := TRUE;    //Reserved
+   Bit28 : BOOL  := TRUE;    //Reserved
+   Bit29 : BOOL  := TRUE;    //Reserved
+   Bit30 : BOOL  := TRUE;    //Reserved
+   Bit31 : BOOL  := TRUE;    //Reserved
+  END_STRUCT ;   
+  OS_Perm_ar AT OS_Perm : ARRAY[0..3] OF BYTE;
+ 
+  OpSt_In { BLK_Jump := '1'; S7_visible := 'false' }: DWORD ;    //Enabled operator stations
+  Feature { S7_visible := 'false'; S7_xedit := 'Bit0,para;Bit1,para;Bit22,para;Bit24,para;' }: STRUCT     //Status of various features
+   Bit0 : BOOL ;    //0 = Start up with defined initializing in OB100; 1 = keep last stored values
+   Bit1 : BOOL ;    //1 = OosLi can switch to Out of Service
+   Bit2 : BOOL ;    //Reserved
+   Bit3 : BOOL ;    //Reserved
+   Bit4 : BOOL ;    //Reserved
+   Bit5 : BOOL ;    //Reserved
+   Bit6 : BOOL ;    //Reserved
+   Bit7 : BOOL ;    //Reserved
+   Bit8 : BOOL ;    //Reserved
+   Bit9 : BOOL ;    //Reserved
+   Bit10 : BOOL ;    //Reserved
+   Bit11 : BOOL ;    //Reserved
+   Bit12 : BOOL ;    //Reserved
+   Bit13 : BOOL ;    //Reserved
+   Bit14 : BOOL ;    //Reserved
+   Bit15 : BOOL ;    //Reserved
+   Bit16 : BOOL ;    //Reserved
+   Bit17 : BOOL ;    //Reserved
+   Bit18 : BOOL ;    //Reserved
+   Bit19 : BOOL ;    //1 = Changes Signal status of outputs in OOS to 16#60
+   Bit20 : BOOL ;    //Reserved
+   Bit21 : BOOL ;    //Reserved
+   Bit22 : BOOL ;    //1 = Enable message state actualization
+   Bit23 : BOOL ;    //Reserved
+   Bit24 : BOOL ;    //1 = Local authorization active
+   Bit25 : BOOL ;    //1 = Suppress all messages if MsgLock = 1
+   Bit26 : BOOL ;    //Reserved
+   Bit27 : BOOL ;    //Reserved
+   Bit28 : BOOL ;    //Reserved
+   Bit29 : BOOL ;    //Reserved
+   Bit30 : BOOL ;    //Reserved
+   Bit31 : BOOL ;    //Reserved
+  END_STRUCT ;   
+END_VAR
+VAR_OUTPUT
+  MS_Release : STRUCT     //1 = MS release
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  Enthalpy_Out { S7_dynamic := 'true'; S7_m_c := 'true'; S7_edit := 'para'; S7_xm_c := 'Value,true;'; S7_xqc := 'Value,true;'; S7_xshortcut := 'Value,;'; S7_xtrend := 'Value,Enthalpy_OpScale.Low,Enthalpy_OpScale.High;' }: STRUCT     //Enthalpy [kJ/kg]
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  AbsHum_Out { S7_dynamic := 'true'; S7_m_c := 'true'; S7_edit := 'para'; S7_xm_c := 'Value,true;'; S7_xqc := 'Value,true;'; S7_xshortcut := 'Value,;'; S7_xtrend := 'Value,AbsHum_OpScale.Low,AbsHum_OpScale.High;' }: STRUCT     //absolute humidity [g/kg]
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  SatHum_Out { S7_dynamic := 'true'; S7_m_c := 'true'; S7_edit := 'para'; S7_xm_c := 'Value,true;'; S7_xqc := 'Value,true;'; S7_xshortcut := 'Value,;';
+   S7_xtrend := 'Value,SatHum_OpScale.Low,SatHum_OpScale.High;' }: STRUCT     //humitity at saturation [g/kg]
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  TempWeBu_Out { S7_dynamic := 'true'; S7_m_c := 'true'; S7_edit := 'para'; S7_xm_c := 'Value,true;'; S7_xqc := 'Value,true;'; S7_xshortcut := 'Value,;'; S7_xtrend := 'Value,Temp_OpScale.Low,Temp_OpScale.High;' }: STRUCT     //wet-bulb temperature [°C]
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  Temp_Out { S7_dynamic := 'true'; S7_m_c := 'true'; S7_edit := 'para'; S7_xm_c := 'Value,true;'; S7_xqc := 'Value,true;'; S7_xshortcut := 'Value,;'; S7_xtrend := 'Value,Temp_OpScale.Low,Temp_OpScale.High;' }: STRUCT     //temperature [°C]
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  RelHum_Out { S7_dynamic := 'true'; S7_m_c := 'true'; S7_edit := 'para'; S7_xm_c := 'Value,true;'; S7_xqc := 'Value,true;'; S7_xshortcut := 'Value,;'; S7_xtrend := 'Value,RelHum_OpScale.Low,RelHum_OpScale.High;' }: STRUCT     //relative humidity [%]
+   Value : REAL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  TempCSF_Out { S7_dynamic := 'true'; S7_m_c := 'true'; S7_xm_c := 'Value,true;' }: STRUCT     //temperature (Temp) faulty
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  RelHumCSF_Out { S7_dynamic := 'true'; S7_m_c := 'true'; S7_xm_c := 'Value,true;' }: STRUCT     //relative humidity (RelHum) faulty
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  GrErr { S7_dynamic := 'true'; S7_m_c := 'true' }: BOOL ;    //Group Error
+  ExtMsg1Out { S7_visible := 'false' }: STRUCT     //Message input 1 - output
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  ExtMsg2Out { S7_visible := 'false' }: STRUCT     //Message input 2 - output
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  ExtMsg3Out { S7_visible := 'false' }: STRUCT     //Message input 3 - output
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  ExtMsg4Out { S7_visible := 'false' }: STRUCT     //Message input 4 - output
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  ExtMsg5Out { S7_visible := 'false' }: STRUCT     //Message input 5 - output
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  SimAct { S7_dynamic := 'true'; S7_m_c := 'true' }: BOOL ;    //1=Simulation active
+  SumMsgAct { S7_dynamic := 'true'; S7_visible := 'false' }: STRUCT     //Summary message active
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  OosAct { S7_dynamic := 'true'; S7_m_c := 'true'; S7_xm_c := 'Value,true;' }: STRUCT     //Out of service is active
+   Value : BOOL ;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  OnAct { S7_dynamic := 'true' }: STRUCT     //On Mode is active
+   Value : BOOL  := TRUE;    //Value
+   ST : BYTE  := B#16#80;    //Signal Status
+  END_STRUCT ;   
+  OS_PermOut { S7_m_c := 'true'; S7_visible := 'false' }: DWORD ;    //Operator Permissions: Output for OS
+  OS_PermOut_ar AT OS_PermOut : ARRAY[0..3] OF BYTE;
+ 
+  OS_PermLog { S7_visible := 'true'; S7_m_c := 'true' }: DWORD ;    //Operator Permissions: Output for OS
+  OS_PermLog_b AT OS_PermLog : ARRAY[0..31] OF BOOL ;
+  OS_PermLog_ar AT OS_PermLog : ARRAY[0..3] OF BYTE;
+ 
+  OpSt_Out { S7_visible := 'true'; S7_m_c := 'true' }: DWORD ;    //Enabled operator stations
+  ST_Worst { S7_m_c := 'true'; S7_visible := 'false' }: BYTE ;    //Worst Signal Status
+  Status1 { S7_dynamic := 'true'; S7_m_c := 'true'; S7_visible := 'false' }: DWORD ;    //Status word 1
+  Status1_b AT Status1 : ARRAY[0..31] OF BOOL;
+ 
+  Status2 { S7_dynamic := 'true'; S7_m_c := 'true'; S7_visible := 'false' }: DWORD ;    //Status word 2
+  Status2_b AT Status2 : ARRAY[0..31] OF BOOL;
+ 
+  MsgErr { S7_visible := 'false'; S7_dynamic := 'false' }: BOOL ;    //Message Error
+  MsgStat { S7_visible := 'false' }: WORD ;    //Message Status
+  MsgAckn { S7_visible := 'false' }: WORD ;    //Message acknowledge
+  MsgSup { S7_m_c := 'true'; S7_dynamic := 'false' }: BOOL ;    //Message suppressed
+END_VAR
+VAR
+  ALARM_8P_1 : "ALARM_8P";   
+  sbFirstStart : BOOL  := TRUE;    //Initial run.
+  siRunUpCounter : INT ;    //Hochlaufzдhler
+  sbMsgLock : BOOL ;    //Meldungen sperren
+  sbTempCSF : BOOL ;    //Externer Fehler Temperatur
+  sbRelHumCSF : BOOL ;    //Externer Fehler relative Feuchte
+  sbExtMsg1 : BOOL ;    //Message 1
+  sbExtMsg2 : BOOL ;    //Message 2
+  sbExtMsg3 : BOOL ;    //Message 3
+  sbExtMsg4 : BOOL ;    //Message 4
+  sbExtMsg5 : BOOL ;    //Message 5
+  sbMsg1Old : BOOL ;   
+  sbMsg2Old : BOOL ;   
+  sbMsg3Old : BOOL ;   
+  sbMsg4Old : BOOL ;   
+  sbMsg5Old : BOOL ;   
+  sbMsg6Old : BOOL ;   
+  sbMsg7Old : BOOL ;   
+  sbMsg8Old : BOOL ;   
+  sbMsgGroupError : BOOL ;    //Gruppenfehler
+  sbMsgRepeat : BOOL ;   
+  sbOnOp : BOOL ;   
+  sbOnAct : BOOL ;   
+  sbOosOp : BOOL ;   
+  sbOosLi : BOOL ;   
+  sbOosAct : BOOL ;   
+  srU : REAL ;   
+  srOldValue : REAL ;   
+  sdBatchID : DWORD ;    //Batch ID
+  ssBatchName : STRING  [32 ];    //Batch Name
+  ssBatchName_byte AT ssBatchName : STRUCT
+    l : INT;
+    bytes : ARRAY [0..31] OF BYTE;
+  END_STRUCT;
+ 
+  sdStepNo : DWORD ;    //Step number
+  siMsgToggle : INT ;   
+  sbFlankeReset : BOOL ;    //Flankenmerker fьr Eingang RESET
+  sbState : BOOL ;    //Status der Meldung
+  liRetVal : INT ;    //Fehler vom SFC Aufruf
+  swOSStatus : WORD ;    //Status-Doppelwort
+  _reserve : ARRAY  [0 .. 15 ] OF //16 bytes
+  BYTE ;    //16 bytes
+  SxReserved1 : BOOL  := TRUE;    //Reserved
+  SxReserved2 : BOOL  := TRUE;    //Reserved
+  SxReserved3 : BOOL  := TRUE;    //Reserved
+  SxReserved4 : BOOL  := TRUE;    //Reserved
+  SxReserved5 : BOOL ;    //Reserved
+  SxReserved6 : BOOL ;    //Reserved
+  SxReserved7 : BOOL ;    //Reserved
+  SxReserved8 : BOOL ;    //Reserved
+END_VAR
+VAR_TEMP
+  b_upd_alarm : BOOL ;   
+  s_inst : STRUCT    
+   b0 : BYTE ;    //Byte 0
+   b1 : BYTE ;    //Byte 1
+   b2 : BYTE ;    //Byte 2
+   b3 : BYTE ;    //Byte 3
+   b4 : BYTE ;    //Byte 4
+   b5 : BYTE ;    //Byte 5
+   b6 : BYTE ;    //Byte 6
+   b7 : BYTE ;    //Byte 7
+   b8 : BYTE ;    //Byte 8
+   b9 : BYTE ;    //Byte 9
+   b10 : BYTE ;    //Byte 10
+   b11 : BYTE ;    //Byte 11
+   b12 : BYTE ;    //Byte 12
+   b13 : BYTE ;    //Byte 13
+   b14 : BYTE ;    //Byte 14
+   b15 : BYTE ;    //Byte 15
+  END_STRUCT ;   
+  TOP_SI : STRUCT    
+   EV_CLASS : BYTE ;   
+   EV_NUM : BYTE ;   
+   PRIORITY : BYTE ;   
+   NUM : BYTE ;   
+   TYP2_3 : BYTE ;   
+   TYP1 : BYTE ;   
+   ZI1 : WORD ;   
+   ZI2_3 : DWORD ;   
+  END_STRUCT ;   
+  START_UP_SI : STRUCT    
+   EV_CLASS : BYTE ;   
+   EV_NUM : BYTE ;   
+   PRIORITY : BYTE ;   
+   NUM : BYTE ;   
+   TYP2_3 : BYTE ;   
+   TYP1 : BYTE ;   
+   ZI1 : WORD ;   
+   ZI2_3 : DWORD ;   
+  END_STRUCT ;   
+  piRetVal : INT ;   
+  prTemp : REAL ;    //gemessene Temperatur
+  prRelHum : REAL ;    //gemessene relative Feuchte
+  prErgebnis : REAL ;    //Ergebnis Sдttigungsdruck Fall 1 oder Fall 2
+  prEnthal : REAL ;    //berechnete Enthalpie
+  prAbsHum : REAL ;    //berechnete absolute Feuchte
+  prSatHum : REAL ;    //berechnete Sдttigungsfeuchte
+  prTempWeBu : REAL ;    //berechnete Feuchtekugeltemperatur
+  xFeat_SSinOOS : BOOL ;    //Bit19: 1 = changes signal status of  all applicable outputs to 16#60 in OOS
+  prC1 : REAL ;   
+  prC2 : REAL ;   
+  prC3 : REAL ;   
+END_VAR
+BEGIN
+xFeat_SSinOOS:=Feature.Bit19;
+piRetVal:=RD_SINFO(TOP_SI := TOP_SI // OUT: STRUCT
+         ,START_UP_SI := START_UP_SI // OUT: STRUCT
+         ); // INT
+ 
+b_upd_alarm:=FALSE;
+ 
+IF (((TOP_SI.NUM=B#16#64) OR Restart) OR sbFirstStart) THEN //A7d0//
+    sbFirstStart:=FALSE;
+    siRunUpCounter:=RunUpCyc;
+    sbOnAct:=OnAct.Value;
+    sbOosAct:=OosAct.Value;
+    sbOosLi:=OosLi.Value;
+    b_upd_alarm:=TRUE;
+END_IF; //A7d0//
+ 
+IF (siRunUpCounter>0) THEN //A7d1//
+    siRunUpCounter:=siRunUpCounter-1;
+    MsgSup:=TRUE;
+    sbMsgLock:=TRUE;
+    sbOnOp:=FALSE;
+    sbOosOp:=FALSE;
+    sbOosLi:=OosLi.Value;
+    IF (NOT(Feature.Bit0)) THEN //A7d3//
+        sbTempCSF:=FALSE;
+        sbRelHumCSF:=FALSE;
+        sbMsgGroupError:=FALSE;
+        Status1:=DW#16#0;
+        Status2:=DW#16#0;
+        SumMsgAct.Value:=FALSE;
+    END_IF;   
+ELSE //A7d1//
+    OnAct.Value:=NOT(OosAct.Value);
+    IF (Status1=DW#16#0) THEN //A7d4//
+        sbMsgRepeat:=TRUE;
+    END_IF; //A7d4//
+    IF ((((NOT(sbOosOp)) AND OosOp) AND OnAct.Value) AND OS_Perm.Bit3) THEN //A7d5//
+        sbOnAct:=FALSE;
+        sbOosAct:=TRUE;
+        IF (xFeat_SSinOOS) THEN //A7da//
+            Enthalpy_Out.ST:=B#16#60;
+            AbsHum_Out.ST:=B#16#60;
+            SatHum_Out.ST:=B#16#60;
+            TempWeBu_Out.ST:=B#16#60;
+            Temp_Out.ST:=B#16#60;
+            RelHum_Out.ST:=B#16#60;
+            TempCSF_Out.ST:=B#16#60;
+            RelHumCSF_Out.ST:=B#16#60;
+        END_IF;   
+    ELSIF (((NOT(sbOosLi)) AND OosLi.Value) AND Feature.Bit1) THEN //A7d8//
+        sbOnAct:=FALSE;
+        sbOosAct:=TRUE;
+        IF (xFeat_SSinOOS) THEN //A7da//
+            Enthalpy_Out.ST:=B#16#60;
+            AbsHum_Out.ST:=B#16#60;
+            SatHum_Out.ST:=B#16#60;
+            TempWeBu_Out.ST:=B#16#60;
+            Temp_Out.ST:=B#16#60;
+            RelHum_Out.ST:=B#16#60;
+            TempCSF_Out.ST:=B#16#60;
+            RelHumCSF_Out.ST:=B#16#60;
+        END_IF;
+    ELSIF ((((NOT(sbOnOp)) AND OnOp) AND OosAct.Value) AND OS_Perm.Bit1) THEN //A7da//
+        sbOnAct:=TRUE;
+        sbOosAct:=FALSE;
+    END_IF; //A7da//
+    OS_PermOut_ar[0]:=OS_Perm_ar[3];
+    OS_PermOut_ar[1]:=OS_Perm_ar[2];
+    OS_PermOut_ar[2]:=OS_Perm_ar[1];
+    OS_PermOut_ar[3]:=OS_Perm_ar[0];
+    IF (sbOnAct) THEN //A7db//
+        OS_PermLog_ar[0]:=OS_Perm_ar[3];
+        OS_PermLog_ar[1]:=OS_Perm_ar[2];
+        OS_PermLog_ar[2]:=OS_Perm_ar[1];
+        OS_PermLog_ar[3]:=OS_Perm_ar[0];
+        OS_PermLog_b[19]:=(NOT(SimLiOp.Value)) AND OS_Perm.Bit11;
+    ELSIF (sbOosAct) THEN //A7dd//
+        OS_PermLog:=DW#16#0;
+    END_IF; //A7dd//
+    OS_PermLog_b[25]:=(NOT(sbOnAct)) AND OS_Perm.Bit1;
+    OS_PermLog_b[27]:=(NOT(sbOosAct)) AND OS_Perm.Bit3;
+    OS_PermLog_b[20]:=OS_Perm.Bit12;
+    OnAct.Value:=sbOnAct;
+    OosAct.Value:=sbOosAct;
+    sbOnOp:=OnOp;
+    sbOosOp:=OosOp;
+    sbOosLi:=OosLi.Value;
+    OosOp:=FALSE;
+    OnOp:=FALSE;
+    MS_Release.Value:=MS_RelOp;
+    IF (sbOnAct) THEN //A7d3//
+        OS_PermLog_b[19]:=OS_Perm.Bit11;
+        SimAct:=((NOT(SimLiOp.Value)) AND SimOn) OR ((SimOnLi.Value) AND SimLiOp.Value);
+        sbMsgLock:=MsgLock.Value;
+        sbTempCSF:=TempCSF.Value;
+        sbRelHumCSF:=RelHumCSF.Value;
+        sbExtMsg1:=ExtMsg1.Value;
+        sbExtMsg2:=ExtMsg2.Value;
+        sbExtMsg3:=ExtMsg3.Value;
+        sbExtMsg4:=ExtMsg4.Value;
+        sbExtMsg5:=ExtMsg5.Value;
+        IF (SimAct) THEN //A7df//
+            IF ((SimOnLi.Value) AND SimLiOp.Value) THEN //A7e0//
+                prTemp:=SimTemp_Li.Value;
+                prRelHum:=SimRelHum_Li.Value;
+            ELSE //A7e0//
+                prTemp:=SimTemp;
+                prRelHum:=SimRelHum;
+            END_IF; //A7e1//
+            IF (SimLiOp.Value) THEN //A7e3//
+                SimTemp:=SimTemp_Li.Value;
+                SimRelHum:=SimRelHum_Li.Value;
+            END_IF;
+        ELSE //A7df//
+            prTemp:=Temp.Value;
+            prRelHum:=RelHum.Value;
+        END_IF; //A7e3//
+        prC3:=_C3;
+        IF (prTemp=0.000000e+000) THEN //A7e4//
+            prErgebnis:=prC3;
+        ELSE //A7e4//
+            IF (prTemp>=0.000000e+000) THEN //A7e6//
+                prC1:=C1PosTemp;
+                prC2:=C2PosTemp;
+            ELSE //A7e6//
+                prC1:=C1NegTemp;
+                prC2:=C2NegTemp;
+            END_IF; //A7e7//
+            prErgebnis:=EXP((prC1*prTemp)/(prC2+prTemp))*prC3;
+        END_IF; //A7e5//
+       
+        prSatHum:= 1/(AtmPress-prErgebnis / 100.0)* prErgebnis * 6.221018;
+       
+        prAbsHum:=(prSatHum*prRelHum)/1.000000e+002;
+        prEnthal:=(1.006000e+000*prTemp)+((((1.860000e+000*prTemp)+2.501000e+003)*prAbsHum)/1.000000e+003);
+        prTempWeBu:=(((5.800000e-002*prRelHum)+-5.809000e+000)+(6.970000e-001*prTemp))+((3.000000e-003*prRelHum)*prTemp);
+        SatHum_Out.Value:=prSatHum;
+        AbsHum_Out.Value:=prAbsHum;
+        Enthalpy_Out.Value:=prEnthal;
+        TempWeBu_Out.Value:=prTempWeBu;
+        s_inst.b0:=Temp.ST;
+        s_inst.b1:=RelHum.ST;
+        ST_Worst:=SelST16(InST := s_inst // IN: STRUCT
+                ,Num := 2 // IN: INT
+                ,SelPrio := 0 // IN: INT
+                ); // BYTE
+        sbMsgGroupError:=((((((sbTempCSF) OR sbRelHumCSF) OR sbExtMsg1) OR sbExtMsg2) OR sbExtMsg3) OR sbExtMsg4) OR sbExtMsg5;
+        SumMsgAct.Value:=((((((sbTempCSF) OR sbRelHumCSF) OR sbExtMsg1) OR sbExtMsg2) OR sbExtMsg3) OR sbExtMsg4) OR sbExtMsg5;
+    END_IF; //A7d3//
+END_IF;   
+ 
+b_upd_alarm:=
+               (((((((sbMsg1Old <> (((NOT(sbMsgLock AND Feature.Bit25)) AND sbTempCSF) AND (NOT sbOosAct))) OR b_upd_alarm)
+                OR   (sbMsg2Old <> (((NOT(sbMsgLock AND Feature.Bit25)) AND sbRelHumCSF) AND (NOT sbOosAct)))  
+                OR   (sbMsg3Old <> ((NOT sbMsgLock) AND SimAct) AND (NOT sbOosAct)
+             )) OR   (sbMsg4Old <> (((NOT(sbMsgLock AND Feature.Bit25)) AND sbExtMsg1) AND (NOT sbOosAct))
+             )) OR   (sbMsg5Old <> (((NOT(sbMsgLock AND Feature.Bit25)) AND sbExtMsg2) AND (NOT sbOosAct))
+             )) OR   (sbMsg6Old <> (((NOT(sbMsgLock AND Feature.Bit25)) AND sbExtMsg3) AND (NOT sbOosAct))
+             )) OR   (sbMsg7Old <> (((NOT(sbMsgLock AND Feature.Bit25)) AND sbExtMsg4) AND (NOT sbOosAct))
+             )) OR   (sbMsg8Old <> (((NOT(sbMsgLock AND Feature.Bit25)) AND sbExtMsg5) AND (NOT sbOosAct))
+         );
+ 
+sbMsg1Old:=((NOT((sbMsgLock) AND Feature.Bit25)) AND sbTempCSF) AND (NOT(sbOosAct));
+sbMsg2Old:=((NOT((sbMsgLock) AND Feature.Bit25)) AND sbRelHumCSF) AND (NOT(sbOosAct));
+sbMsg3Old:=((NOT(sbMsgLock)) AND SimAct) AND (NOT(sbOosAct));
+sbMsg4Old:=((NOT((sbMsgLock) AND Feature.Bit25)) AND sbExtMsg1) AND (NOT(sbOosAct));
+sbMsg5Old:=((NOT((sbMsgLock) AND Feature.Bit25)) AND sbExtMsg2) AND (NOT(sbOosAct));
+sbMsg6Old:=((NOT((sbMsgLock) AND Feature.Bit25)) AND sbExtMsg3) AND (NOT(sbOosAct));
+sbMsg7Old:=((NOT((sbMsgLock) AND Feature.Bit25)) AND sbExtMsg4) AND (NOT(sbOosAct));
+sbMsg8Old:=((NOT((sbMsgLock) AND Feature.Bit25)) AND sbExtMsg5) AND (NOT(sbOosAct));
+ 
+IF (Feature.Bit22) THEN //A7e8//
+    IF (siMsgToggle>=1) THEN //A7e9//
+        siMsgToggle:=0;
+        IF ((MsgAckn AND W#16#FF)<>W#16#FF) THEN //A7e8//
+            b_upd_alarm:=TRUE;
+        END_IF;
+    ELSE //A7e9//
+        siMsgToggle:=1;
+    END_IF;
+END_IF; //A7e8//
+ 
+IF ((b_upd_alarm) OR sbMsgRepeat) THEN //A7ec//
+ 
+    ALARM_8P_1(EN_R := TRUE // IN: BOOL
+               ,ID := W#16#EEEE // IN: WORD
+               ,EV_ID := MsgEvId // IN: DWORD
+               ,SIG_1 := ((NOT((sbMsgLock) AND Feature.Bit25)) AND sbTempCSF) AND (NOT(sbOosAct)) // IN: BOOL
+               ,SIG_2 := ((NOT((sbMsgLock) AND Feature.Bit25)) AND sbRelHumCSF) AND (NOT(sbOosAct)) // IN: BOOL
+               ,SIG_3 := ((NOT(sbMsgLock)) AND SimAct) AND (NOT(sbOosAct)) // IN: BOOL
+               ,SIG_4 := ((NOT((sbMsgLock) AND Feature.Bit25)) AND sbExtMsg1) AND (NOT(sbOosAct)) // IN: BOOL
+               ,SIG_5 := ((NOT((sbMsgLock) AND Feature.Bit25)) AND sbExtMsg2) AND (NOT(sbOosAct)) // IN: BOOL
+               ,SIG_6 := ((NOT((sbMsgLock) AND Feature.Bit25)) AND sbExtMsg3) AND (NOT(sbOosAct)) // IN: BOOL
+               ,SIG_7 := ((NOT((sbMsgLock) AND Feature.Bit25)) AND sbExtMsg4) AND (NOT(sbOosAct)) // IN: BOOL
+               ,SIG_8 := ((NOT((sbMsgLock) AND Feature.Bit25)) AND sbExtMsg5) AND (NOT(sbOosAct)) // IN: BOOL
+               ,SD_1 := ssBatchName_byte.bytes // INOUT: ANY
+               ,SD_2 := sdStepNo // INOUT: ANY
+               ,SD_3 := sdBatchID // INOUT: ANY
+               ,SD_4 := ExtVal04 // INOUT: ANY
+               ,SD_5 := ExtVal05 // INOUT: ANY
+               ,SD_6 := ExtVal06 // INOUT: ANY
+               ,SD_7 := ExtVal07 // INOUT: ANY
+               ,SD_8 := ExtVal08  // INOUT: ANY
+               ,SD_9 := ExtVal09 // INOUT: ANY
+               ,SD_10 := ExtVal10 // INOUT: ANY
+               );
+ 
+    sbMsgRepeat:=ALARM_8P_1.STATUS=W#16#14;
+    IF (Feature.Bit22) THEN //A7ed//
+        MsgErr:=ALARM_8P_1.ERROR;
+        MsgStat:=ALARM_8P_1.STATUS;
+        MsgAckn:=ALARM_8P_1.ACK_STATE;
+    ELSE //A7ed//
+        MsgErr:=FALSE;
+        MsgStat:=W#16#0;
+        MsgAckn:=W#16#0;
+    END_IF;
+END_IF; //A7ec//
+ 
+MsgSup:=(MsgStat=W#16#15) OR sbMsgLock;
+IF (SimAct) THEN //A7ef//
+    Enthalpy_Out.ST:=B#16#60;
+    AbsHum_Out.ST:=B#16#60;
+    SatHum_Out.ST:=B#16#60;
+    Temp_Out.ST:=B#16#60;
+    RelHum_Out.ST:=B#16#60;
+    TempWeBu_Out.ST:=B#16#60;
+    ST_Worst:=B#16#60;
+    Temp_Out.Value:=prTemp;
+    RelHum_Out.Value:=prRelHum;
+ELSE //A7ef//
+    IF (NOT(OosAct.Value)) THEN //A7f1//
+        Enthalpy_Out.ST:=ST_Worst;
+        AbsHum_Out.ST:=ST_Worst;
+        SatHum_Out.ST:=ST_Worst;
+        Temp_Out.ST:=Temp.ST;
+        RelHum_Out.ST:=RelHum.ST;
+        TempWeBu_Out.ST:=ST_Worst;
+    END_IF; //A7f1//
+    Temp_Out.Value:=Temp.Value;
+    RelHum_Out.Value:=RelHum.Value;
+    SimTemp:=Temp_Out.Value;
+    SimRelHum:=RelHum_Out.Value;
+END_IF; //A7f0//
+ 
+IF (SimLiOp.Value) THEN //A7f2//
+    SimOn:=SimOnLi.Value;
+END_IF; //A7f2//
+ 
+TempCSF_Out.Value:=sbTempCSF;
+RelHumCSF_Out.Value:=sbRelHumCSF;
+ExtMsg1Out.Value:=sbExtMsg1;
+ExtMsg2Out.Value:=sbExtMsg2;
+ExtMsg3Out.Value:=sbExtMsg3;
+ExtMsg4Out.Value:=sbExtMsg4;
+ExtMsg5Out.Value:=sbExtMsg5;
+GrErr:=sbMsgGroupError;
+Status1_b[27]:=OosAct.Value;
+Status1_b[30]:=OnAct.Value;
+Status2_b[7]:=MS_RelOp;
+IF (NOT(OosAct.Value)) THEN //A7f3//
+    Status1_b[24]:=Occupied;
+    Status1_b[25]:=BatchEn;
+    Status1_b[27]:=OosAct.Value;
+    Status1_b[28]:=OosLi.Value;
+    Status1_b[30]:=OnAct.Value;
+    Status1_b[26]:=SimAct;
+    Status1_b[18]:=SimLiOp.Value;
+    Status1_b[6]:=NOT(UserAna1.ST=B#16#FF);
+    Status1_b[7]:=NOT(UserAna2.ST=B#16#FF);
+    Status2_b[24]:=MsgLock.Value;
+    Status2_b[25]:=sbTempCSF;
+    Status2_b[26]:=sbRelHumCSF;
+END_IF; //A7f3//
+ 
+IF (Feature.Bit24) THEN //A7f4//
+    OpSt_Out:=OpSt_In OR DW#16#80000000;
+ELSE //A7f4//
+    OpSt_Out:=OpSt_In AND DW#16#7FFFFFFF;
+END_IF; //A7f5//
+ 
+END_FUNCTION_BLOCK
